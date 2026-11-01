@@ -10,5 +10,5 @@
 服务器流量 = script-name=服务器流量,update-interval=1800
 
 [Script]
-服务器流量 = type=generic,timeout=25,script-path=https://raw.githubusercontent.com/zhiaon/Module/main/surge_scripts/vps-panel.js,script-update-interval=0
-流量预警 = type=cron,cronexp=0 10,20 * * *,wake-system=1,timeout=40,script-path=https://raw.githubusercontent.com/zhiaon/Module/main/surge_scripts/vps-alert.js,script-update-interval=0
+服务器流量 = type=generic,timeout=25,script-path=https://raw.githubusercontent.com/zhiaon/Module/main/surge_scripts/vps-panel.js?v=20261101a,script-update-interval=0
+流量预警 = type=cron,cronexp=0 10,20 * * *,wake-system=1,timeout=40,script-path=https://raw.githubusercontent.com/zhiaon/Module/main/surge_scripts/vps-alert.js?v=20261101a,script-update-interval=0
