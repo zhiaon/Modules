@@ -4,7 +4,7 @@
 #!category=网络
 #!icon=server.rack
 #!arguments=ak:AWS Access Key ID,sk:,region:ap-southeast-1,quota:2048,instances:,hosts:,labels:,billdays:,expiry:
-#!arguments-desc=⓵ ak / sk【必填】：IAM 访问密钥，只需 lightsail:GetInstances 和 lightsail:GetInstanceMetricData 两个权限。\n⓶ region：实例区域，默认 ap-southeast-1。\n⓷ quota：每台每月出站配额(GB)，Lightsail 2048GB 套餐填 2048。\n⓸ instances：要监控的实例名，多个用英文逗号分隔，例如 Debian-1,Debian-2；留空则显示账号下全部实例。\n⓹ hosts：实例与域名对应，用于显示域名并检测 IP 漂移。格式 实例名:域名，多组用分号分隔，例如 Debian-1:ls1.zhiaon.top;Debian-2:ls2.zhiaon.top\n⓺ labels：面板显示名。格式 实例名:显示名，多组用分号分隔，例如 Debian-1:ls1;Debian-2:ls2，留空则用域名或实例名。\n⓻ billdays：计费日(1-28)。Lightsail 按实例创建日滚动，不是自然月。格式 实例名:日期，例如 Debian-1:17;Debian-2:1，留空按每月 1 号。\n⓼ expiry：到期日。格式 实例名:YYYY-MM-DD，例如 Debian-1:2026-12-31，留空则不显示到期信息。\n⓽ 高级：从 ⓸ 起多组配置统一用分号 ; 分隔各组、冒号 : 分隔键值，不要用逗号。
+#!arguments-desc=⓵ ak / sk【必填】：IAM 访问密钥，只需 lightsail:GetInstances 和 lightsail:GetInstanceMetricData 两个权限。\n⓶ region：实例区域，默认 ap-southeast-1。\n⓷ quota：每台每月出站配额(GB)，Lightsail 2048GB 套餐填 2048。\n⓸ instances：要监控的实例名，多个用分号分隔，例如 Debian-1;Debian-2；留空则显示账号下全部实例。注意 Surge 会在英文逗号处截断参数，本模块一律用分号 ; 分隔。\n⓹ hosts：实例与域名对应，用于显示域名并检测 IP 漂移。格式 实例名:域名，多组用分号分隔，例如 Debian-1:ls1.zhiaon.top;Debian-2:ls2.zhiaon.top\n⓺ labels：面板显示名。格式 实例名:显示名，多组用分号分隔，例如 Debian-1:ls1;Debian-2:ls2，留空则用域名或实例名。\n⓻ billdays：计费日(1-28)。Lightsail 按实例创建日滚动，不是自然月。格式 实例名:日期，例如 Debian-1:17;Debian-2:1，留空按每月 1 号。\n⓼ expiry：到期日。格式 实例名:YYYY-MM-DD，例如 Debian-1:2026-12-31，留空则不显示到期信息。\n⓽ 高级：从 ⓸ 起多组配置统一用分号 ; 分隔各组、冒号 : 分隔键值，不要用逗号。
 
 [Panel]
 服务器流量 = script-name=服务器流量,update-interval=1800
