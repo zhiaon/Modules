@@ -249,9 +249,11 @@ function gb(b) {
 }
 
 function bar(p) {
-  var n = Math.max(0, Math.min(10, Math.round(p / 10)));
+  // 用 20 格，最小 1 格也可见；>=0.05% 就点亮一格
+  var total = 20;
+  var n = p <= 0 ? 0 : Math.max(1, Math.min(total, Math.round(p / 100 * total)));
   var s = '';
-  for (var i = 0; i < 10; i++) s += i < n ? '▰' : '▱';
+  for (var i = 0; i < total; i++) s += i < n ? '▰' : '▱';
   return s;
 }
 
@@ -422,27 +424,55 @@ function main() {
 
   function render() {
     var lines = [], maxPct = 0, alerts = 0;
+    var BLOCK = '━━━━━━━━━━━━━━';
 
     results.forEach(function (s, i) {
       if (s.pct != null && s.pct > maxPct) maxPct = s.pct;
       if ((s.pct != null && s.pct >= 85) || (s.daysLeft != null && s.daysLeft <= 7) || s.dnsMismatch) alerts++;
 
-      var name = s.label;
-      var flag = s.dnsMismatch ? ' ⚠️DNS' : '';
-      if (s.pct >= 85) flag += ' 🔴';
+      if (i > 0) lines.push(BLOCK);
+
+      // 标题行：旗 + 名字 + 状态
+      var title = '🇸🇬 ' + s.label.toUpperCase();
+      if (s.state && s.state !== 'running') title += ' · ' + s.state;
+      if (s.dnsMismatch) title += ' ⚠️';
+      lines.push(title);
+
+      // 域名与 IP
+      if (s.dnsMismatch) {
+        lines.push('⚠️ ' + s.host + ' → ' + s.dnsMismatch.join(',') + '（实例 ' + s.ip + '）');
+      } else if (s.host) {
+        lines.push('🔗 ' + s.host);
+      }
 
       if (s.outBytes == null && s.inBytes == null) {
-        lines.push(name + flag + '：采集失败');
+        lines.push('❌ 采集失败');
         return;
       }
 
-      // 单行紧凑：名字  ↑出站 / ↓入站  剩余  重置倒计时
-      lines.push(name + flag + ' ↑' + gb(s.outBytes) + ' ↓' + gb(s.inBytes) +
-                 '｜剩 ' + gb(s.remaining) + '｜' + s.resetDays + 'd');
+      // 进度条
+      lines.push(bar(s.pct || 0) + '  ' + (s.pct == null ? '--' : s.pct + '%'));
+
+      // 流量明细
+      lines.push('📤 出站  ' + gb(s.outBytes) + '   /   ' + s.quotaGb + 'G');
+      lines.push('📥 入站  ' + gb(s.inBytes) + '   （不计配额）');
+      lines.push('📊 合计  ' + gb(s.totalBytes));
+      lines.push('💾 剩余  ' + gb(s.remaining));
+
+      // 趋势
+      lines.push('📈 日均  ↑' + gb(s.outDaily) + '  ↓' + gb(s.inDaily));
+      lines.push('🔮 预估  ↑' + gb(s.outForecast) + '  ↓' + gb(s.inForecast));
+
+      // 重置与到期
+      lines.push('🔄 周期 ' + md(s.cycleStart) + ' → ' + md(s.reset) + '（剩 ' + s.resetDays + ' 天）');
+      if (s.expire) {
+        lines.push('⏰ ' + s.expire + '  剩 ' + s.daysLeft + ' 天');
+      }
     });
 
+    var head = alerts ? '⚠️ ' : '';
     $done({
-      title: '服务器流量' + (alerts ? ' ⚠️' : '') + ' · ' + md(now.toISOString().slice(0, 10)),
+      title: head + '服务器流量 · ' + md(now.toISOString().slice(0, 10)),
       content: lines.join('\n'),
       icon: 'server.rack',
       'icon-color': color(maxPct)
