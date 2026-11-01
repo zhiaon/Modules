@@ -424,32 +424,21 @@ function main() {
     var lines = [], maxPct = 0, alerts = 0;
 
     results.forEach(function (s, i) {
-      if (i > 0) lines.push('');
       if (s.pct != null && s.pct > maxPct) maxPct = s.pct;
       if ((s.pct != null && s.pct >= 85) || (s.daysLeft != null && s.daysLeft <= 7) || s.dnsMismatch) alerts++;
 
-      lines.push(s.label + (s.state && s.state !== 'running' ? ' [' + s.state + ']' : ''));
-
-      if (s.dnsMismatch) {
-        lines.push('⚠️ ' + s.host + ' 解析到 ' + s.dnsMismatch.join(',') + '，实例已是 ' + s.ip);
-      } else if (s.host) {
-        lines.push('🔗 ' + s.host + ' → ' + s.ip);
-      }
-
-      lines.push('配额用度 ' + bar(s.pct || 0) + ' ' + (s.pct == null ? '--' : s.pct + '%'));
+      var name = s.label;
+      var flag = s.dnsMismatch ? ' ⚠️DNS' : '';
+      if (s.pct >= 85) flag += ' 🔴';
 
       if (s.outBytes == null && s.inBytes == null) {
-        lines.push('采集失败：' + (s.err || '未知'));
+        lines.push(name + flag + '：采集失败');
         return;
       }
 
-      lines.push('↑ 出站 ' + gb(s.outBytes) + '  ·  ↓ 入站 ' + gb(s.inBytes));
-      lines.push('双向合计 ' + gb(s.totalBytes));
-      lines.push('出站剩余 ' + gb(s.remaining) + '（配额 ' + s.quotaGb + 'G，仅计↑）');
-      lines.push('日均 ↑' + gb(s.outDaily) + '  ↓' + gb(s.inDaily));
-      lines.push('预估 ↑' + gb(s.outForecast) + '  ↓' + gb(s.inForecast));
-      lines.push('周期 ' + md(s.cycleStart) + '-' + md(s.reset) + '，' + s.resetDays + ' 天后重置');
-      if (s.expire) lines.push('到期 ' + s.expire + '（剩 ' + s.daysLeft + ' 天）');
+      // 单行紧凑：名字  ↑出站 / ↓入站  剩余  重置倒计时
+      lines.push(name + flag + ' ↑' + gb(s.outBytes) + ' ↓' + gb(s.inBytes) +
+                 '｜剩 ' + gb(s.remaining) + '｜' + s.resetDays + 'd');
     });
 
     $done({
