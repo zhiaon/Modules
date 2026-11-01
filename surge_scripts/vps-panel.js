@@ -183,8 +183,21 @@ function arg() {
   return '';
 }
 
-var ACCESS_KEY = arg('ak', 'AK');
-var SECRET_KEY = arg('sk', 'SK');
+// Surge 要求 #!arguments 的默认值非空，所以模块里填的是占位符；
+// 这里把占位符/未填统一视作空值，避免把占位当密钥去签名。
+function real(v) {
+  v = String(v || '').trim();
+  if (!v) return '';
+  // 精确匹配占位词；不能用 /^(ak|sk)/i，那会把真实密钥 AKIA... / AKIA 开头的 key 误杀
+  if (/^(空|无|none|null|undefined)$/i.test(v)) return '';
+  if (/^(YOUR_|填入|填写|请填写)/i.test(v)) return '';
+  if (/^<.+>$/.test(v)) return '';
+  if (v === 'ak' || v === 'sk' || v === 'AK' || v === 'SK') return '';
+  return v;
+}
+
+var ACCESS_KEY = real(arg('ak', 'AK'));
+var SECRET_KEY = real(arg('sk', 'SK'));
 var REGION = arg('region') || 'ap-southeast-1';
 var QUOTA_GB = Number(arg('quota') || 2048);
 var TIMEOUT = Number(arg('timeout') || 20);
@@ -206,7 +219,10 @@ function parsePair(raw) {
     if (i < 0) return;
     var k = pair.slice(0, i).trim();
     var v = pair.slice(i + 1).trim();
-    if (k) out[k] = v;
+    // 占位符当空处理，例如 实例名:ls1.zhiaon.top 这种示例值不算配置
+    if (/^(实例名|域名|显示名|日期|示例|<.+>)$/.test(k)) return;
+    if (/^(ls1\.zhiaon\.top|ls2\.zhiaon\.top)$/.test(v)) return;
+    if (k && v) out[k] = v;
   });
   return out;
 }
