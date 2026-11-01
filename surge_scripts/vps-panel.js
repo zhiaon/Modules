@@ -204,7 +204,7 @@ var TIMEOUT = Number(arg('timeout') || 20);
 
 // 实例清单："Debian-1" 或 "Debian-1,Debian-2"；留空则自动读取账号下所有实例
 var INSTANCES = arg('instances').split(/[;|]/).map(function (s) { return s.trim(); })
-  .filter(function (s) { return s; });
+  .filter(function (s) { return s && s !== 'ALL' && s !== 'none'; });
 
 // 每台实例的展示名 / 绑定域名 / 计费日 / 到期日，支持三种写法：
 //   hosts=Debian-1:ls1.zhiaon.top,Debian-2:ls2.zhiaon.top
@@ -222,6 +222,7 @@ function parsePair(raw) {
     // 占位符当空处理，例如 实例名:ls1.zhiaon.top 这种示例值不算配置
     if (/^(实例名|域名|显示名|日期|示例|<.+>)$/.test(k)) return;
     if (/^(ls1\.zhiaon\.top|ls2\.zhiaon\.top)$/.test(v)) return;
+    if (k === 'none' || v === 'none' || v === 'ALL') return;
     if (k && v) out[k] = v;
   });
   return out;
