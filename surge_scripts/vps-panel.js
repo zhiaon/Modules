@@ -190,7 +190,7 @@ var QUOTA_GB = Number(arg('quota') || 2048);
 var TIMEOUT = Number(arg('timeout') || 20);
 
 // 实例清单："Debian-1" 或 "Debian-1,Debian-2"；留空则自动读取账号下所有实例
-var INSTANCES = arg('instances').split(',').map(function (s) { return s.trim(); })
+var INSTANCES = arg('instances').split(/[;|]/).map(function (s) { return s.trim(); })
   .filter(function (s) { return s; });
 
 // 每台实例的展示名 / 绑定域名 / 计费日 / 到期日，支持三种写法：
