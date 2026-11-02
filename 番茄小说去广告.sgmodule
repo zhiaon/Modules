@@ -1,0 +1,123 @@
+#!name=番茄小说去广告 Surge专用 V1.15
+#!desc=V1.15：修复埋点家族漏拦（applog/misc 的 -lf/-hl/-lq 后缀全部命中）；补 luckycat 广告素材域、abtest3-misc-lf、ecombdimg 素材家族；ecomuser 由 DIRECT 改为 REJECT；frontier-aweme 保持精确域名拦截（曾用关键词覆盖导致段评白屏，已回滚）
+#!author=Codex
+
+[Rule]
+# 统一标准：按广告链路的域名家族与 SNI/Host 拦截，不追随可变 CDN IP，避免误伤头像/图片 CDN
+# 抖音/番茄底部推荐位与埋点
+DOMAIN,frontier-aweme.snssdk.com,REJECT,extended-matching
+DOMAIN,mon.snssdk.com,REJECT,extended-matching
+DOMAIN,toblog.ctobsnssdk.com,REJECT,extended-matching
+DOMAIN,mssdk.zijieapi.com,REJECT,extended-matching
+# 番茄/穿山甲心跳、PCDN 与电商辅助主机不硬拦，避免密集重试刷 Surge
+DOMAIN,aweme.snssdk.com,DIRECT,extended-matching
+DOMAIN,i.snssdk.com,DIRECT,extended-matching
+DOMAIN,is.snssdk.com,DIRECT,extended-matching
+DOMAIN,vas.snssdk.com,DIRECT,extended-matching
+# ecomuser 是电商/推广位下发接口（截图底部「预约赢 iPhone」卡片就走这里），拦掉
+DOMAIN,ecomuser.snssdk.com,REJECT,extended-matching
+DOMAIN,effect.snssdk.com,DIRECT,extended-matching
+DOMAIN,gurd.snssdk.com,DIRECT,extended-matching
+# 关键登录/内容接口保留直连，避免误伤正文
+DOMAIN,security.snssdk.com,DIRECT,extended-matching
+DOMAIN,reading.snssdk.com,DIRECT,extended-matching
+DOMAIN,ichannel.snssdk.com,DIRECT,extended-matching
+# 视频 CDN 不硬拦截，避免广告位黑框反复重试导致 Surge 请求风暴
+# 广告位改由上游广告配置/接口与响应体清理处理
+# 宿主真实形态为 log0-applog-lf.fqnovel.com / mon11-misc-lf.fqnovel.com，
+# 原写法 applog.fqnovel.com 永远匹配不到，改成家族关键词
+DOMAIN-KEYWORD,applog-lf.fqnovel.com,REJECT,extended-matching
+DOMAIN-KEYWORD,applog-hl.fqnovel.com,REJECT,extended-matching
+DOMAIN-KEYWORD,applog-lq.fqnovel.com,REJECT,extended-matching
+DOMAIN-KEYWORD,misc-lf.fqnovel.com,REJECT,extended-matching
+DOMAIN-KEYWORD,misc-hl.fqnovel.com,REJECT,extended-matching
+DOMAIN-KEYWORD,misc-lq.fqnovel.com,REJECT,extended-matching
+# 番茄新宿主：amemv（抖音系埋点）、zijieapi 的 applog 家族，纯埋点拦了无风险
+# 实测仍在直连：log0-misc-lf.amemv.com / applog.zijieapi.com
+DOMAIN-KEYWORD,applog.zijieapi.com,REJECT,extended-matching
+DOMAIN-KEYWORD,-misc-lf.amemv.com,REJECT,extended-matching
+DOMAIN-KEYWORD,applog-lf.amemv.com,REJECT,extended-matching
+DOMAIN-SUFFIX,pangolin-sdk-toutiao.com,REJECT,extended-matching
+DOMAIN-SUFFIX,pglstatp-toutiao.com,REJECT,extended-matching
+DOMAIN-SUFFIX,toutiaocloud.com,REJECT,extended-matching
+DOMAIN-SUFFIX,toutiaocloud.net,REJECT,extended-matching
+# ByteGecko 是资源/热更新 CDN，硬拦截会触发番茄反复重试，改为直连降噪
+DOMAIN-SUFFIX,bytegecko.com,DIRECT,extended-matching
+DOMAIN,p6-ad-sign.byteimg.com,REJECT-DROP,extended-matching
+DOMAIN,p9-ad-sign.byteimg.com,REJECT-DROP,extended-matching
+DOMAIN,zlink.ugsdk.cn,REJECT-DROP,extended-matching
+DOMAIN,dig.bdurl.net,REJECT-DROP,extended-matching
+DOMAIN,activity-ag.awemeughun.com,REJECT,extended-matching
+# 底部横幅/书页底栏推荐位
+# 只拦原始精确域名。曾试过 DOMAIN-KEYWORD,frontier-aweme 做家族覆盖，
+# 结果 frontier-aweme-jj-ipainner.amemv.com（段评/评论接口）被一起打掉，
+# 段评白屏「网络出错」——这是实测踩过的坑，不要改回关键词。
+DOMAIN,frontier-aweme.snssdk.com,REJECT,extended-matching
+# 电商广告素材：p3-aio 只拦主域会漏 p26-item/p3-item 等，改家族关键词
+DOMAIN-KEYWORD,-item.ecombdimg.com,REJECT,extended-matching
+DOMAIN-KEYWORD,-aio.ecombdimg.com,REJECT,extended-matching
+DOMAIN-KEYWORD,-ad.ecombdimg.com,REJECT,extended-matching
+DOMAIN,ads5-normal-hl.zijieapi.com,REJECT,extended-matching
+DOMAIN,ads3-normal-hl.zijieapi.com,REJECT,extended-matching
+DOMAIN,ads5-normal.zijieapi.com,REJECT,extended-matching
+DOMAIN,ads3-normal.zijieapi.com,REJECT,extended-matching
+DOMAIN,abtest3-misc.zijieapi.com,REJECT,extended-matching
+DOMAIN,abtest3-misc-hl.zijieapi.com,REJECT,extended-matching
+# -lf 后缀漏了：实测 abtest3-misc-lf.zijieapi.com 仍在直连（AB 实验位下发）
+DOMAIN,abtest3-misc-lf.zijieapi.com,REJECT,extended-matching
+# luckycat 是字节广告素材平台（p3/p6-luckycat.byteimg.com），实测单次拉 3KB+ 素材
+DOMAIN-KEYWORD,luckycat.byteimg.com,REJECT,extended-matching
+DOMAIN,mssdk.zijieapi.com,REJECT,extended-matching
+DOMAIN,mssdk3-normal-lf.zijieapi.com,REJECT-DROP,extended-matching
+DOMAIN,ads5-normal-lf.zijieapi.com,REJECT-DROP,extended-matching
+DOMAIN,ads3-normal-lf.zijieapi.com,REJECT-DROP,extended-matching
+DOMAIN,ma.zijieapi.com,DIRECT,extended-matching
+DOMAIN,imapi5-oth-lf.zijieapi.com,DIRECT,extended-matching
+DOMAIN,gecko5-hj.zijieapi.com,DIRECT,extended-matching
+# 额外广告 SDK / 京东金融创意与落地页
+DOMAIN-SUFFIX,ad.toutiao.com,REJECT,extended-matching
+DOMAIN-SUFFIX,ad.zijieapi.com,REJECT,extended-matching
+DOMAIN-SUFFIX,ads.zijieapi.com,REJECT,extended-matching
+DOMAIN-SUFFIX,mon.zijieapi.com,REJECT,extended-matching
+DOMAIN-SUFFIX,log-api.pangolin-sdk-toutiao.com,REJECT,extended-matching
+DOMAIN-SUFFIX,log-api.pangolin-sdk-toutiao-b.com,REJECT,extended-matching
+DOMAIN-SUFFIX,gromore.pangolin-sdk-toutiao.com,REJECT,extended-matching
+DOMAIN-SUFFIX,api-access.pangolin-sdk-toutiao1.com,REJECT,extended-matching
+DOMAIN-SUFFIX,api-access.pangolin-sdk-toutiao-b.com,REJECT,extended-matching
+DOMAIN-SUFFIX,pangolin.snssdk.com,REJECT,extended-matching
+# 京东金融 / 京准通 / 开普勒 / 图片 CDN
+# 不再整域拦截京东主站与主站图片，避免误伤商品页；只保留高置信广告 SDK / 广告素材域名
+DOMAIN-SUFFIX,jdjr.jd.com,REJECT,extended-matching
+DOMAIN-SUFFIX,jr.jd.com,REJECT,extended-matching
+DOMAIN-SUFFIX,ccc-x.jd.com,REJECT,extended-matching
+DOMAIN-SUFFIX,knicks.jd.com,REJECT,extended-matching
+DOMAIN-SUFFIX,p3-ad-sign.byteimg.com,REJECT,extended-matching
+USER-AGENT,ttplayer*,REJECT
+
+[Script]
+番茄内容清理 = type=http-response,pattern=^https?:\/\/(?:.*\.)?(?:fqnovel\.com|reading\.snssdk\.com|ichannel\.snssdk\.com)\/.*$,requires-body=1,max-size=1048576,binary-body-mode=0,timeout=15,script-path=https://raw.githubusercontent.com/zhiaon/Module/main/surge_scripts/fanqie_clean.js
+
+[URL Rewrite]
+# 章末广告 / 广告 SDK
+^https?:\/\/.+\.pangolin-sdk-toutiao\.com\/api\/ad\/union\/sdk\/(get_ads|stats|settings)\/ _ reject
+^https?:\/\/api-access\.pangolin-sdk-toutiao\.com\/api\/ad\/union\/sdk\/(get_ads|stats|settings)\/ _ reject
+
+# pglstatp / pstatp 广告素材，限定广告路径，避免宽泛误伤正常图片
+^https?:\/\/.+\.pglstatp-toutiao\.com\/.+\/toutiao\.mp4 _ reject
+^https?:\/\/.+\.(pglstatp-toutiao|pstatp)\.com\/(obj|img)\/(ad-app-package|ad)\/.+ _ reject
+^https?:\/\/.+\.(pglstatp-toutiao|pstatp)\.com\/(obj|img)\/web\.business\.image\/.+ _ reject
+^https?:\/\/.+\.(pglstatp-toutiao|pstatp)\.com\/obj\/ad-pattern\/renderer _ reject
+^https?:\/\/.+\.(pglstatp-toutiao|pstatp)\.com\/(ad-app-package|ad)\/.+ _ reject
+^https?:\/\/.+\.pstatp\.com\/obj\/mosaic-legacy\/.+\?from\=ad _ reject
+^https?:\/\/.+\.pstatp\.com\/bytecom\/resource\/track_log\/src\/.+ _ reject
+
+# snssdk 广告与热更包
+^https?:\/\/gurd\.snssdk\.com\/src\/server\/v3\/package _ reject
+^https?:\/\/.+\.snssdk\.com\/video\/play\/1\/toutiao\/.+\/mp4 _ reject
+^https?:\/\/.+\.snssdk\.com\/api\/ad\/.+ _ reject
+^https?:\/\/.+?\.snssdk\.com\/motor\/operation\/activity\/display\/config\/V2\/ _ reject
+
+# 番茄视频 CDN 不在此处硬拒绝，避免黑框广告位反复重试
+
+[MITM]
+hostname = %APPEND% api5-normal-lf.fqnovel.com, api5-normal-hl.fqnovel.com, api5-normal-lq.fqnovel.com, api5-normal-sinfonlinec.fqnovel.com, frontier100-toutiao-lf.fqnovel.com, reading.snssdk.com, ichannel.snssdk.com, *.pangolin-sdk-toutiao.com, api-access.pangolin-sdk-toutiao.com, *.pglstatp-toutiao.com, *.pstatp.com
