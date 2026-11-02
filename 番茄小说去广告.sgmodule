@@ -1,5 +1,5 @@
-#!name=番茄小说去广告 Surge专用 V1.15
-#!desc=V1.15：修复埋点家族漏拦（applog/misc 的 -lf/-hl/-lq 后缀全部命中）；补 luckycat 广告素材域、abtest3-misc-lf、ecombdimg 素材家族；ecomuser 由 DIRECT 改为 REJECT；frontier-aweme 保持精确域名拦截（曾用关键词覆盖导致段评白屏，已回滚）
+#!name=番茄小说去广告 Surge专用 V1.16
+#!desc=V1.16：新增 mgsdk-sign.byteimg.com 广告推广素材拦截（实测底部卡片一次拉 3 张共 327KB）；V1.15 基础：埋点 -lf/-hl/-lq 家族、luckycat、abtest3-misc-lf、ecombdimg 素材家族、ecomuser 改 REJECT；frontier-aweme 保持精确域名（关键词覆盖会导致段评白屏）
 #!author=Codex
 
 [Rule]
@@ -67,6 +67,9 @@ DOMAIN,abtest3-misc-hl.zijieapi.com,REJECT,extended-matching
 DOMAIN,abtest3-misc-lf.zijieapi.com,REJECT,extended-matching
 # luckycat 是字节广告素材平台（p3/p6-luckycat.byteimg.com），实测单次拉 3KB+ 素材
 DOMAIN-KEYWORD,luckycat.byteimg.com,REJECT,extended-matching
+# mgsdk-sign 是小游戏/广告推广素材（p3/p6/p9-mgsdk-sign.byteimg.com），
+# 实测底部推广卡片一次拉 3 张共 327KB，与 ad-sign 同族
+DOMAIN-KEYWORD,mgsdk-sign.byteimg.com,REJECT,extended-matching
 DOMAIN,mssdk.zijieapi.com,REJECT,extended-matching
 DOMAIN,mssdk3-normal-lf.zijieapi.com,REJECT-DROP,extended-matching
 DOMAIN,ads5-normal-lf.zijieapi.com,REJECT-DROP,extended-matching
