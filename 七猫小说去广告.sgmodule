@@ -1,0 +1,124 @@
+#!name=七猫小说去广告
+#!version=1.1.5
+#!desc=移除七猫小说广告。
+#!author=zhiaon
+#!icon=https://raw.githubusercontent.com/luestr/IconResource/main/App_icon/120px/SevenCat.png
+#!category=去广告
+#!openUrl=https://apps.apple.com/app/id1387717110
+#!tag=去广告
+#!homepage=https://github.com/zhiaon/qimao-novel-adblock
+#!date=2026-10-28
+
+[Rule]
+# 七猫自家广告 / 统计 / 风控域名（新增：七猫自建广告交换平台域名，见 DD-AD 七猫段）
+DOMAIN,ad.wtzw.com,REJECT,extended-matching,pre-matching
+DOMAIN,cdn-ad.wtzw.com,REJECT,extended-matching,pre-matching
+DOMAIN,cdn-new-ad.wtzw.com,REJECT,extended-matching,pre-matching
+DOMAIN,drs-ipv6.wtzw.com,REJECT,extended-matching,pre-matching
+DOMAIN,ad-drs.52qumao.com,REJECT,extended-matching,pre-matching
+DOMAIN,ad-drs-ipv6.52qumao.com,REJECT,extended-matching,pre-matching
+DOMAIN,api-adx.52qumao.com,REJECT,extended-matching,pre-matching
+DOMAIN,api-cfg.52qumao.com,REJECT,extended-matching,pre-matching
+DOMAIN,t-adx.52qumao.com,REJECT,extended-matching,pre-matching
+DOMAIN,t-cfg.52qumao.com,REJECT,extended-matching,pre-matching
+DOMAIN,api-eas.52qumao.com,REJECT,extended-matching,pre-matching
+DOMAIN,mkt.wtzw.com,REJECT,extended-matching,pre-matching
+DOMAIN,tj-adc.wtzw.com,REJECT,extended-matching,pre-matching
+DOMAIN,tjjs.wtzw.com,REJECT,extended-matching,pre-matching
+DOMAIN,dig-cfg.wtzw.com,REJECT,extended-matching,pre-matching
+DOMAIN,t-cfg.wtzw.com,REJECT,extended-matching,pre-matching
+DOMAIN,a-qmad.qm989.com,REJECT,extended-matching,pre-matching
+DOMAIN,a6-remad.qm989.com,REJECT,extended-matching,pre-matching
+DOMAIN,t-remad.qm989.com,REJECT,extended-matching,pre-matching
+DOMAIN,a-qmad.qimao.com,REJECT,extended-matching,pre-matching
+DOMAIN,t-qmad.qimao.com,REJECT,extended-matching,pre-matching
+DOMAIN,a-remad.qm989.com,REJECT,extended-matching,pre-matching
+# 峰控云设备风控域名，默认不拦截（可能影响 App 登录/风控校验），需要时取消下一行注释
+#DOMAIN,fp-it.fengkongcloud.com,REJECT,extended-matching,pre-matching
+DOMAIN-SUFFIX,adxvip.com,REJECT,extended-matching,pre-matching
+DOMAIN-SUFFIX,ad.xelements.cn,REJECT,extended-matching,pre-matching
+DOMAIN-SUFFIX,yunxish.com,REJECT,extended-matching,pre-matching
+DOMAIN-SUFFIX,iggrowth.cn,REJECT,extended-matching,pre-matching
+DOMAIN-SUFFIX,58iclick.com,REJECT,extended-matching,pre-matching
+# 穿山甲 Pangolin（字节广告）—— 七猫主力广告 SDK，实测使用三个变体域名
+DOMAIN-SUFFIX,pangolin-sdk-toutiao.com,REJECT,extended-matching,pre-matching
+DOMAIN-SUFFIX,pangolin-sdk-toutiao1.com,REJECT,extended-matching,pre-matching
+DOMAIN-SUFFIX,pangolin-sdk-toutiao-b.com,REJECT,extended-matching,pre-matching
+DOMAIN-SUFFIX,pglstatp-toutiao.com,REJECT,extended-matching,pre-matching
+DOMAIN-SUFFIX,pstatp.com,REJECT,extended-matching,pre-matching
+# 优量汇 GDT（腾讯广告）—— sdk.e.qq.com 为优量汇 SDK 域名，实测七猫在用
+DOMAIN-SUFFIX,e.qq.com,REJECT,extended-matching,pre-matching
+DOMAIN-SUFFIX,gdt.qq.com,REJECT,extended-matching,pre-matching
+DOMAIN,qzs.gdtimg.com,REJECT,extended-matching,pre-matching
+DOMAIN,pgdt.ugdtimg.com,REJECT,extended-matching,pre-matching
+# 阿里妈妈 Alimama（淘宝/天猫广告）—— 七猫插页"淘宝下载"广告来源，角标 AM
+DOMAIN-SUFFIX,alimama.com,REJECT,extended-matching,pre-matching
+DOMAIN-SUFFIX,tanx.com,REJECT,extended-matching,pre-matching
+DOMAIN-SUFFIX,mmstat.com,REJECT,extended-matching,pre-matching
+# 1RTB 广告聚合，实测七猫在用 sdk.1rtb.net
+DOMAIN-SUFFIX,1rtb.net,REJECT,extended-matching,pre-matching
+# UC 联盟广告，实测七猫在用（仅取广告子域，不影响神马搜索本身）
+DOMAIN,sdk-log.partner.sm.cn,REJECT,extended-matching,pre-matching
+DOMAIN-SUFFIX,huichuan.sm.cn,REJECT,extended-matching,pre-matching
+DOMAIN-SUFFIX,huichuan-mc.sm.cn,REJECT,extended-matching,pre-matching
+DOMAIN-SUFFIX,c.sm.cn,REJECT,extended-matching,pre-matching
+# UC / 汇川生态其他广告域名（与 huichuan.sm.cn 同列于公开广告规则表，非猜测）
+DOMAIN-SUFFIX,partner.sm.cn,REJECT,extended-matching,pre-matching
+DOMAIN-SUFFIX,iflow.sm.cn,REJECT,extended-matching,pre-matching
+DOMAIN,iflow.uczzd.cn,REJECT,extended-matching,pre-matching
+DOMAIN,m.uczzd.cn,REJECT,extended-matching,pre-matching
+DOMAIN,client.video.ucweb.com,REJECT,extended-matching,pre-matching
+DOMAIN,cms.ucweb.com,REJECT,extended-matching,pre-matching
+DOMAIN,dispatcher.upmc.uc.cn,REJECT,extended-matching,pre-matching
+DOMAIN,log.cs.pp.cn,REJECT,extended-matching,pre-matching
+DOMAIN,patriot.cs.pp.cn,REJECT,extended-matching,pre-matching
+DOMAIN,server.m.pp.cn,REJECT,extended-matching,pre-matching
+DOMAIN,u.uc123.com,REJECT,extended-matching,pre-matching
+# 汇川 SSP 与阿里广告（与 huichuan.sm.cn 同列于公开广告规则表，第 10 章淘宝双 11 汇川广告仍在后补查到）
+DOMAIN,hc-ssp.sm.cn,REJECT,extended-matching,pre-matching
+DOMAIN,ai.advertisement.alibabacorp.sm.cn,REJECT,extended-matching,pre-matching
+DOMAIN-SUFFIX,reachmax.cn,REJECT,extended-matching,pre-matching
+# UBiX 天璇广告（七猫阅读页插页角标 UBIX）：域名取自官方 UBiXAdSDK 二进制硬编码
+# adx-cfg-u1.ubixioe.com（配置）、adx-data-u1.ubixioe.com（数据）、entry-su1.ubixioe.com（入口）
+DOMAIN-SUFFIX,ubixioe.com,REJECT,extended-matching,pre-matching
+# 快手广告
+DOMAIN-SUFFIX,adukwai.com,REJECT,extended-matching,pre-matching
+DOMAIN-SUFFIX,kwaix.com,REJECT,extended-matching,pre-matching
+# 百度联盟 / 京东 DSP
+DOMAIN-SUFFIX,mobads.baidu.com,REJECT,extended-matching,pre-matching
+DOMAIN,mobads-pre-config.cdn.bcebos.com,REJECT,extended-matching,pre-matching
+DOMAIN-SUFFIX,adx.jd.com,REJECT,extended-matching,pre-matching
+DOMAIN,dsp-x.jd.com,REJECT,extended-matching,pre-matching
+
+[URL Rewrite]
+# 广告素材 / 激励视频 / 广告配置接口直接拒绝
+^https?:\/\/sf3-fe-tos\.pglstatp-toutiao\.com\/obj\/ad-pattern\/ - reject
+^https?:\/\/api-access\.pangolin-sdk-toutiao-b\.com\/api\/ad\/union\/sdk\/get_ads - reject
+^https?:\/\/api-access\.(pangolin-sdk-toutiao|pangolin-sdk-toutiao1)\.com\/api\/ad - reject
+^https?:\/\/open\.e\.kuaishou\.cn\/rest\/e\/v3\/open\/univ - reject
+^https?:\/\/p1-lm\.adukwai\.com\/bs2\/adUnionVideo - reject
+^https?:\/\/lf-cdn-tos\.bytescm\.com\/obj\/static\/ad - reject
+^https?:\/\/dsp-x\.jd\.com\/adx\/sdk - reject
+^https?:\/\/api-cfg\.wtzw\.com\/v\d\/adv\/ - reject
+^https?:\/\/api-cfg\.wtzw\.com\/v\d\/reward\/ - reject
+^https?:\/\/api-cfg\.wtzw\.com\/v\d\/operation - reject
+^https?:\/\/api-cfg\.wtzw\.com\/v\d\/splash\/ - reject
+^https?:\/\/api-cfg\.wtzw\.com\/v\d\/offline-adv\/index - reject
+
+[Map Local]
+# 返回空 JSON，保持 App 正常逻辑而非崩溃
+^https?:\/\/api-cfg\.wtzw\.com\/v\d\/operation\/index\?ad_personal_switch data-type=text data="{}" status-code=200 header="Content-Type:application/json"
+^https?:\/\/api-bc\.wtzw\.com\/api\/v4\/search\/dispose data-type=text data="{}" status-code=200 header="Content-Type:application/json"
+^https?:\/\/api-bc\.wtzw\.com\/api\/v\d\/book-store\/config data-type=text data="{}" status-code=200 header="Content-Type:application/json"
+^https?:\/\/api-bc\.wtzw\.com\/api\/v\d\/book-store\/push-book data-type=text data="{}" status-code=200 header="Content-Type:application/json"
+^https?:\/\/api-bc\.wtzw\.com\/api\/v\d\/operation data-type=text data="{}" status-code=200 header="Content-Type:application/json"
+^https?:\/\/api-gw\.wtzw\.com\/welf\/app\/v\d\/task\/red-packet data-type=text data="{}" status-code=200 header="Content-Type:application/json"
+^https?:\/\/cdn\.wtzw\.com\/bookimg\/free\/api\/v\d\/reader\/reader-copy-paragraph-all\.json data-type=text data="{}" status-code=200 header="Content-Type:application/json"
+^https?:\/\/xiaoshuo\.wtzw\.com\/api\/v\d\/withdraw\/init data-type=text data="{}" status-code=200 header="Content-Type:application/json"
+
+[Script]
+# 移除「我的」页面个人中心功能区中的广告位（等价于 luestr 的 jq delpaths func_area[1,2]）
+http-response ^https?:\/\/xiaoshuo\.wtzw\.com\/api\/v\d\/user\/my-center\? script-path=https://raw.githubusercontent.com/zhiaon/Modules/main/surge_scripts/qimao.js, requires-body=true, tag=qimao-mycenter
+
+[MITM]
+hostname = %APPEND% api-cfg.wtzw.com, api-bc.wtzw.com, api-gw.wtzw.com, cdn.wtzw.com, xiaoshuo.wtzw.com, sf3-fe-tos.pglstatp-toutiao.com, api-access.pangolin-sdk-toutiao-b.com, api-access.pangolin-sdk-toutiao.com, api-access.pangolin-sdk-toutiao1.com, open.e.kuaishou.cn, p1-lm.adukwai.com, lf-cdn-tos.bytescm.com, dsp-x.jd.com
