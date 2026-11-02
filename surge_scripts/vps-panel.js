@@ -200,6 +200,8 @@ var ACCESS_KEY = real(arg('ak', 'AK'));
 var SECRET_KEY = real(arg('sk', 'SK'));
 var REGION = arg('region') || 'ap-southeast-1';
 var QUOTA_GB = Number(arg('quota') || 2048);
+// 超出配额后只对出站计费，ap-southeast-1 = $0.12/GB
+var PRICE_GB = Number(arg('price') || 0.12);
 var TIMEOUT = Number(arg('timeout') || 20);
 
 // 实例清单："Debian-1" 或 "Debian-1,Debian-2"；留空则自动读取账号下所有实例
@@ -246,6 +248,12 @@ function gb(b) {
     return g + 'G';
   }
   return (b / 1048576).toFixed(0) + 'M';
+}
+
+function pctOf(p) {
+  if (p == null) return '--';
+  var v = p < 0.01 ? 0 : (p < 1 ? Math.round(p * 100) / 100 : Math.round(p * 10) / 10);
+  return v + '%';
 }
 
 function bar(p) {
@@ -390,8 +398,13 @@ function main() {
             r.outBytes = outB;
             r.inBytes = inB;
             r.totalBytes = (outB == null && inB == null) ? null : (outB || 0) + (inB || 0);
-            r.remaining = outB == null ? null : Math.max(0, quota - outB);
-            var pct = outB == null ? null : (outB / quota) * 100;
+            // AWS 规则：入站与出站都消耗配额，配额池共用
+            r.remaining = r.totalBytes == null ? null : Math.max(0, quota - r.totalBytes);
+            r.outPct = outB == null ? null : (outB / quota) * 100;
+            r.inPct = inB == null ? null : (inB / quota) * 100;
+            r.overBytes = outB == null ? null : Math.max(0, outB - quota);
+            r.overCost = r.overBytes == null ? null : (r.overBytes / G) * PRICE_GB;
+            var pct = r.totalBytes == null ? null : (r.totalBytes / quota) * 100;
             r.pct = pct == null ? null : (pct < 1 ? Math.round(pct * 100) / 100 : Math.round(pct * 10) / 10);
             r.outDaily = outB == null ? null : outB / elapsed;
             r.inDaily = inB == null ? null : inB / elapsed;
@@ -450,14 +463,28 @@ function main() {
         return;
       }
 
-      // 进度条
+      // 总配额进度条（入站 + 出站 合并消耗）
       lines.push(bar(s.pct || 0) + '  ' + (s.pct == null ? '--' : s.pct + '%'));
 
-      // 流量明细
-      lines.push('📤 出站  ' + gb(s.outBytes) + '   /   ' + s.quotaGb + 'G');
-      lines.push('📥 入站  ' + gb(s.inBytes) + '   （不计配额）');
-      lines.push('📊 合计  ' + gb(s.totalBytes));
-      lines.push('💾 剩余  ' + gb(s.remaining));
+      // 配额总览
+      lines.push('🎫 配额  ' + gb(s.totalBytes) + '  /  ' + s.quotaGb + 'G'
+                 + '   （' + pctOf(s.pct) + '）');
+      lines.push('💾 剩余  ' + gb(s.remaining)
+                 + '   （' + pctOf(s.pct == null ? null : 100 - s.pct) + '）');
+
+      lines.push('');
+
+      // 出站明细
+      lines.push('📤 出站  ' + gb(s.outBytes) + '   （占配额 ' + pctOf(s.outPct) + '）');
+      if (s.overBytes != null && s.overBytes > 0) {
+        lines.push('   └ 💸 已超额 ' + gb(s.overBytes) + '  ≈ $' + (s.overCost || 0).toFixed(2));
+      } else {
+        lines.push('   └ 计费  $' + PRICE_GB + '/GB（仅超配额后）');
+      }
+
+      // 入站明细
+      lines.push('📥 入站  ' + gb(s.inBytes) + '   （占配额 ' + pctOf(s.inPct) + '）');
+      lines.push('   └ 计费  免费，但计入总配额');
 
       // 趋势
       lines.push('📈 日均  ↑' + gb(s.outDaily) + '  ↓' + gb(s.inDaily));
@@ -469,6 +496,32 @@ function main() {
         lines.push('⏰ ' + s.expire + '  剩 ' + s.daysLeft + ' 天');
       }
     });
+
+    // ===== 全实例汇总 =====
+    var sumOut = 0, sumIn = 0, sumCost = 0, sumQuota = 0, ok = 0;
+    results.forEach(function (s) {
+      if (s.outBytes == null && s.inBytes == null) return;
+      ok++;
+      sumOut += s.outBytes || 0;
+      sumIn += s.inBytes || 0;
+      sumCost += s.overCost || 0;
+      sumQuota += (s.quotaGb || 0) * G;
+    });
+
+    if (ok > 0) {
+      lines.push(BLOCK);
+      lines.push('📊 全部实例合计');
+      lines.push('   ├ 出站总  ' + gb(sumOut));
+      lines.push('   ├ 入站总  ' + gb(sumIn));
+      lines.push('   ├ 消耗总  ' + gb(sumOut + sumIn));
+      lines.push('   ├ 配额总  ' + (sumQuota / G).toFixed(0) + 'G');
+      lines.push('   ├ 剩余总  ' + gb(Math.max(0, sumQuota - sumOut - sumIn)));
+      lines.push('   └ 占比    ' + pctOf(sumQuota > 0 ? ((sumOut + sumIn) / sumQuota) * 100 : null));
+      if (sumCost > 0) {
+        lines.push('💸 超额费  $' + sumCost.toFixed(2)
+                   + '   （仅出站超额计费）');
+      }
+    }
 
     var head = alerts ? '⚠️ ' : '';
     $done({
