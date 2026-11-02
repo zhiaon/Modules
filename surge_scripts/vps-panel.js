@@ -333,9 +333,18 @@ function main() {
     if (err) { fail('获取实例失败：' + err); return; }
 
     var all = (j && j.instances) || [];
-    var insts = INSTANCES.length
-      ? all.filter(function (x) { return INSTANCES.indexOf(x.name) >= 0; })
-      : all;
+    var insts;
+    if (INSTANCES.length) {
+      // 严格按 instances 参数里的顺序排列，AWS 返回顺序不保证
+      insts = [];
+      INSTANCES.forEach(function (n) {
+        for (var i = 0; i < all.length; i++) {
+          if (all[i].name === n) { insts.push(all[i]); return; }
+        }
+      });
+    } else {
+      insts = all;
+    }
 
     if (!insts.length) {
       fail(INSTANCES.length
