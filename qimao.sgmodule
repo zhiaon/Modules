@@ -118,7 +118,7 @@ DOMAIN,dsp-x.jd.com,REJECT,extended-matching,pre-matching
 
 [Script]
 # 移除「我的」页面个人中心功能区中的广告位（等价于 luestr 的 jq delpaths func_area[1,2]）
-http-response ^https?:\/\/xiaoshuo\.wtzw\.com\/api\/v\d\/user\/my-center\? script-path=https://raw.githubusercontent.com/zhiaon/qimao-novel-adblock/main/qimao.js, requires-body=true, tag=qimao-mycenter
+http-response ^https?:\/\/xiaoshuo\.wtzw\.com\/api\/v\d\/user\/my-center\? script-path=https://raw.githubusercontent.com/zhiaon/Modules/main/surge_scripts/qimao.js, requires-body=true, tag=qimao-mycenter
 
 [MITM]
 hostname = %APPEND% api-cfg.wtzw.com, api-bc.wtzw.com, api-gw.wtzw.com, cdn.wtzw.com, xiaoshuo.wtzw.com, sf3-fe-tos.pglstatp-toutiao.com, api-access.pangolin-sdk-toutiao-b.com, api-access.pangolin-sdk-toutiao.com, api-access.pangolin-sdk-toutiao1.com, open.e.kuaishou.cn, p1-lm.adukwai.com, lf-cdn-tos.bytescm.com, dsp-x.jd.com
