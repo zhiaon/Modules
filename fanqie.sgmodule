@@ -1,4 +1,4 @@
-#!name=番茄小说去广告 Surge专用 V1.16
+#!name=番茄小说去广告
 #!desc=V1.16：新增 mgsdk-sign.byteimg.com 广告推广素材拦截（实测底部卡片一次拉 3 张共 327KB）；V1.15 基础：埋点 -lf/-hl/-lq 家族、luckycat、abtest3-misc-lf、ecombdimg 素材家族、ecomuser 改 REJECT；frontier-aweme 保持精确域名（关键词覆盖会导致段评白屏）
 #!author=Codex
 
