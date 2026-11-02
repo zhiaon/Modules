@@ -199,7 +199,9 @@ function real(v) {
 var ACCESS_KEY = real(arg('ak', 'AK'));
 var SECRET_KEY = real(arg('sk', 'SK'));
 var REGION = arg('region') || 'ap-southeast-1';
-var QUOTA_GB = Number(arg('quota') || 2048);
+// 出站与入站各自独立配额，互不占用
+var QUOTA_OUT_GB = Number(arg('quotaout') || arg('quota') || 1024);
+var QUOTA_IN_GB  = Number(arg('quotain')  || arg('quota') || 1024);
 // 超出配额后只对出站计费，ap-southeast-1 = $0.12/GB
 var PRICE_GB = Number(arg('price') || 0.12);
 var TIMEOUT = Number(arg('timeout') || 20);
@@ -300,7 +302,8 @@ if (!ACCESS_KEY || !SECRET_KEY) {
 
 function main() {
   var now = new Date();
-  var quota = QUOTA_GB * G;
+  var quotaOut = QUOTA_OUT_GB * G;
+  var quotaIn  = QUOTA_IN_GB * G;
   var results = [];
 
   function post(target, payload, cb) {
@@ -356,7 +359,8 @@ function main() {
         label: LABELS[inst.name] || HOSTS[inst.name] || inst.name,
         ip: inst.publicIpAddress || '',
         state: (inst.state && inst.state.name) || '',
-        quotaGb: QUOTA_GB,
+        quotaOutGb: QUOTA_OUT_GB,
+        quotaInGb: QUOTA_IN_GB,
         cycleStart: c.start.toISOString().slice(0, 10),
         reset: c.end.toISOString().slice(0, 10),
         resetDays: Math.round((c.end - now) / DAY),
@@ -398,13 +402,22 @@ function main() {
             r.outBytes = outB;
             r.inBytes = inB;
             r.totalBytes = (outB == null && inB == null) ? null : (outB || 0) + (inB || 0);
-            // AWS 规则：入站与出站都消耗配额，配额池共用
-            r.remaining = r.totalBytes == null ? null : Math.max(0, quota - r.totalBytes);
-            r.outPct = outB == null ? null : (outB / quota) * 100;
-            r.inPct = inB == null ? null : (inB / quota) * 100;
-            r.overBytes = outB == null ? null : Math.max(0, outB - quota);
+            r.totalQuota = quotaOut + quotaIn;
+
+            // 出站：独立配额
+            r.outRemain = outB == null ? null : Math.max(0, quotaOut - outB);
+            r.outPct = outB == null ? null : (outB / quotaOut) * 100;
+            r.overBytes = outB == null ? null : Math.max(0, outB - quotaOut);
             r.overCost = r.overBytes == null ? null : (r.overBytes / G) * PRICE_GB;
-            var pct = r.totalBytes == null ? null : (r.totalBytes / quota) * 100;
+
+            // 入站：独立配额
+            r.inRemain = inB == null ? null : Math.max(0, quotaIn - inB);
+            r.inPct = inB == null ? null : (inB / quotaIn) * 100;
+            r.inOverBytes = inB == null ? null : Math.max(0, inB - quotaIn);
+
+            // 总池 = 出站配额 + 入站配额
+            r.remaining = r.totalBytes == null ? null : Math.max(0, r.totalQuota - r.totalBytes);
+            var pct = r.totalBytes == null ? null : (r.totalBytes / r.totalQuota) * 100;
             r.pct = pct == null ? null : (pct < 1 ? Math.round(pct * 100) / 100 : Math.round(pct * 10) / 10);
             r.outDaily = outB == null ? null : outB / elapsed;
             r.inDaily = inB == null ? null : inB / elapsed;
@@ -440,8 +453,9 @@ function main() {
     var BLOCK = '━━━━━━━━━━━━━━';
 
     results.forEach(function (s, i) {
-      if (s.pct != null && s.pct > maxPct) maxPct = s.pct;
-      if ((s.pct != null && s.pct >= 85) || (s.daysLeft != null && s.daysLeft <= 7) || s.dnsMismatch) alerts++;
+      var worst = Math.max(s.outPct || 0, s.inPct || 0);
+      if (worst > maxPct) maxPct = worst;
+      if ((worst >= 85) || (s.daysLeft != null && s.daysLeft <= 7) || s.dnsMismatch) alerts++;
 
       if (i > 0) lines.push(BLOCK);
 
@@ -463,28 +477,21 @@ function main() {
         return;
       }
 
-      // 总配额进度条（入站 + 出站 合并消耗）
-      lines.push(bar(s.pct || 0) + '  ' + (s.pct == null ? '--' : s.pct + '%'));
-
-      // 配额总览
-      lines.push('🎫 配额  ' + gb(s.totalBytes) + '  /  ' + s.quotaGb + 'G'
-                 + '   （' + pctOf(s.pct) + '）');
-      lines.push('💾 剩余  ' + gb(s.remaining)
-                 + '   （' + pctOf(s.pct == null ? null : 100 - s.pct) + '）');
-
-      lines.push('');
-
-      // 出站明细
-      lines.push('📤 出站  ' + gb(s.outBytes) + '   （占配额 ' + pctOf(s.outPct) + '）');
+      // ---- 出站（本机消耗，配额全网共享）----
+      lines.push('📤 出站 本机  ' + gb(s.outBytes));
+      lines.push('   ' + bar(s.outPct || 0) + '  ' + pctOf(s.outPct));
+      lines.push('   └ 占共享配额 ' + s.quotaOutGb + 'G 的 ' + pctOf(s.outPct));
       if (s.overBytes != null && s.overBytes > 0) {
-        lines.push('   └ 💸 已超额 ' + gb(s.overBytes) + '  ≈ $' + (s.overCost || 0).toFixed(2));
-      } else {
-        lines.push('   └ 计费  $' + PRICE_GB + '/GB（仅超配额后）');
+        lines.push('   💸 单机已超 ' + gb(s.overBytes) + '  ≈ $' + (s.overCost || 0).toFixed(2));
       }
 
-      // 入站明细
-      lines.push('📥 入站  ' + gb(s.inBytes) + '   （占配额 ' + pctOf(s.inPct) + '）');
-      lines.push('   └ 计费  免费，但计入总配额');
+      // ---- 入站（本机消耗，配额全网共享）----
+      lines.push('📥 入站 本机  ' + gb(s.inBytes));
+      lines.push('   ' + bar(s.inPct || 0) + '  ' + pctOf(s.inPct));
+      lines.push('   └ 占共享配额 ' + s.quotaInGb + 'G 的 ' + pctOf(s.inPct));
+
+      // ---- 本机双向合计 ----
+      lines.push('🎫 本机总  ' + gb(s.totalBytes));
 
       // 趋势
       lines.push('📈 日均  ↑' + gb(s.outDaily) + '  ↓' + gb(s.inDaily));
@@ -498,28 +505,49 @@ function main() {
     });
 
     // ===== 全实例汇总 =====
-    var sumOut = 0, sumIn = 0, sumCost = 0, sumQuota = 0, ok = 0;
+    var sumOut = 0, sumIn = 0, sumCost = 0, ok = 0;
     results.forEach(function (s) {
       if (s.outBytes == null && s.inBytes == null) return;
       ok++;
       sumOut += s.outBytes || 0;
       sumIn += s.inBytes || 0;
       sumCost += s.overCost || 0;
-      sumQuota += (s.quotaGb || 0) * G;
     });
+    // Lightsail 配额按套餐(bundleId)共享，同套餐实例合并计算，不逐台相乘
+    var sumQOut = QUOTA_OUT_GB * G;
+    var sumQIn  = QUOTA_IN_GB  * G;
 
     if (ok > 0) {
       lines.push(BLOCK);
-      lines.push('📊 全部实例合计');
-      lines.push('   ├ 出站总  ' + gb(sumOut));
-      lines.push('   ├ 入站总  ' + gb(sumIn));
-      lines.push('   ├ 消耗总  ' + gb(sumOut + sumIn));
-      lines.push('   ├ 配额总  ' + (sumQuota / G).toFixed(0) + 'G');
-      lines.push('   ├ 剩余总  ' + gb(Math.max(0, sumQuota - sumOut - sumIn)));
-      lines.push('   └ 占比    ' + pctOf(sumQuota > 0 ? ((sumOut + sumIn) / sumQuota) * 100 : null));
+      lines.push('📊 全部实例合计（' + ok + ' 台）');
+
+      var overOut = Math.max(0, sumOut - sumQOut);
+      lines.push('📤 出站总  ' + gb(sumOut) + ' / ' + (sumQOut / G).toFixed(0) + 'G');
+      lines.push('   ├ 已消耗  ' + gb(sumOut)
+                 + '   （' + pctOf(sumQOut > 0 ? (sumOut / sumQOut) * 100 : null) + '）');
+      lines.push('   ├ 剩余    ' + gb(Math.max(0, sumQOut - sumOut)));
+      if (overOut > 0) {
+        lines.push('   └ 💸 超额  ' + gb(overOut) + '  ≈ $'
+                   + ((overOut / G) * PRICE_GB).toFixed(2));
+      } else {
+        lines.push('   └ 计费  $' + PRICE_GB + '/GB（超出后才收）');
+      }
+
+      lines.push('📥 入站总  ' + gb(sumIn) + ' / ' + (sumQIn / G).toFixed(0) + 'G');
+      lines.push('   ├ 已消耗  ' + gb(sumIn)
+                 + '   （' + pctOf(sumQIn > 0 ? (sumIn / sumQIn) * 100 : null) + '）');
+      lines.push('   ├ 剩余    ' + gb(Math.max(0, sumQIn - sumIn)));
+      lines.push('   └ 计费  免费');
+
+      lines.push('🎫 双向合计');
+      lines.push('   ├ 总流量  ' + gb(sumOut + sumIn));
+      lines.push('   ├ 总配额  ' + ((sumQOut + sumQIn) / G).toFixed(0) + 'G');
+      lines.push('   ├ 总剩余  ' + gb(Math.max(0, sumQOut + sumQIn - sumOut - sumIn)));
+      lines.push('   └ 总占比  ' + pctOf(sumQOut + sumQIn > 0
+                 ? ((sumOut + sumIn) / (sumQOut + sumQIn)) * 100 : null));
+
       if (sumCost > 0) {
-        lines.push('💸 超额费  $' + sumCost.toFixed(2)
-                   + '   （仅出站超额计费）');
+        lines.push('💸 超额费  $' + sumCost.toFixed(2) + '   （仅出站超额计费）');
       }
     }
 
