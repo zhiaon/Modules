@@ -98,7 +98,7 @@ DOMAIN-SUFFIX,p3-ad-sign.byteimg.com,REJECT,extended-matching
 USER-AGENT,ttplayer*,REJECT
 
 [Script]
-番茄内容清理 = type=http-response,pattern=^https?:\/\/(?:.*\.)?(?:fqnovel\.com|reading\.snssdk\.com|ichannel\.snssdk\.com)\/.*$,requires-body=1,max-size=1048576,binary-body-mode=0,timeout=15,script-path=https://raw.githubusercontent.com/zhiaon/Module/main/surge_scripts/fanqie_clean.js
+番茄内容清理 = type=http-response,pattern=^https?:\/\/(?:.*\.)?(?:fqnovel\.com|reading\.snssdk\.com|ichannel\.snssdk\.com)\/.*$,requires-body=1,max-size=1048576,binary-body-mode=0,timeout=15,script-path=https://raw.githubusercontent.com/zhiaon/Modules/main/surge_scripts/fanqie_clean.js
 
 [URL Rewrite]
 # 章末广告 / 广告 SDK
