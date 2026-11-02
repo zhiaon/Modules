@@ -1,0 +1,70 @@
+#!name=七猫小说去广告
+#!desc=移除七猫免费小说的开屏、章节间、阅读页、书城、个人中心等广告，并屏蔽穿山甲/优量汇/快手/百度等第三方广告 SDK。受限于七猫对 MitM 与 VPN 状态的检测，少量页面广告可能仍残留，可清除 App 缓存或重装后重试。
+#!author=zhiaon
+#!icon=https://raw.githubusercontent.com/luestr/IconResource/main/App_icon/120px/SevenCat.png
+#!category=去广告
+#!openUrl=https://apps.apple.com/app/id1387717110
+#!tag=去广告
+#!homepage=https://github.com/zhiaon/qimao-novel-adblock
+#!date=2026-10-26
+
+[Rule]
+# 七猫自家广告 / 统计 / 风控域名
+DOMAIN,ad.wtzw.com,REJECT,extended-matching,pre-matching
+DOMAIN,cdn-ad.wtzw.com,REJECT,extended-matching,pre-matching
+DOMAIN,cdn-new-ad.wtzw.com,REJECT,extended-matching,pre-matching
+DOMAIN,drs-ipv6.wtzw.com,REJECT,extended-matching,pre-matching
+DOMAIN,ad-drs.52qumao.com,REJECT,extended-matching,pre-matching
+DOMAIN,ad-drs-ipv6.52qumao.com,REJECT,extended-matching,pre-matching
+DOMAIN,api-adx.52qumao.com,REJECT,extended-matching,pre-matching
+DOMAIN,a-remad.qm989.com,REJECT,extended-matching,pre-matching
+# 峰控云设备风控域名，默认不拦截（可能影响 App 登录/风控校验），需要时取消下一行注释
+#DOMAIN,fp-it.fengkongcloud.com,REJECT,extended-matching,pre-matching
+DOMAIN-SUFFIX,adxvip.com,REJECT,extended-matching,pre-matching
+DOMAIN-SUFFIX,ad.xelements.cn,REJECT,extended-matching,pre-matching
+DOMAIN-SUFFIX,yunxish.com,REJECT,extended-matching,pre-matching
+DOMAIN-SUFFIX,iggrowth.cn,REJECT,extended-matching,pre-matching
+DOMAIN-SUFFIX,58iclick.com,REJECT,extended-matching,pre-matching
+# 优量汇 GDT（腾讯广告）
+DOMAIN-SUFFIX,gdt.qq.com,REJECT,extended-matching,pre-matching
+DOMAIN,qzs.gdtimg.com,REJECT,extended-matching,pre-matching
+DOMAIN,pgdt.ugdtimg.com,REJECT,extended-matching,pre-matching
+# 穿山甲 Pangolin（字节广告）
+DOMAIN-SUFFIX,pglstatp-toutiao.com,REJECT,extended-matching,pre-matching
+# 快手广告
+DOMAIN,p1-lm.adukwai.com,REJECT,extended-matching,pre-matching
+# 百度联盟
+DOMAIN,mobads.baidu.com,REJECT,extended-matching,pre-matching
+DOMAIN,mobads-pre-config.cdn.bcebos.com,REJECT,extended-matching,pre-matching
+
+[URL Rewrite]
+# 广告素材 / 激励视频 / 广告配置接口直接拒绝
+^https?:\/\/sf3-fe-tos\.pglstatp-toutiao\.com\/obj\/ad-pattern\/ - reject
+^https?:\/\/api-access\.pangolin-sdk-toutiao-b\.com\/api\/ad\/union\/sdk\/get_ads - reject
+^https?:\/\/api-access\.(pangolin-sdk-toutiao|pangolin-sdk-toutiao1)\.com\/api\/ad - reject
+^https?:\/\/open\.e\.kuaishou\.cn\/rest\/e\/v3\/open\/univ - reject
+^https?:\/\/p1-lm\.adukwai\.com\/bs2\/adUnionVideo - reject
+^https?:\/\/lf-cdn-tos\.bytescm\.com\/obj\/static\/ad - reject
+^https?:\/\/dsp-x\.jd\.com\/adx\/sdk - reject
+^https?:\/\/api-cfg\.wtzw\.com\/v\d\/adv\/ - reject
+^https?:\/\/api-cfg\.wtzw\.com\/v\d\/reward\/ - reject
+^https?:\/\/api-cfg\.wtzw\.com\/v\d\/splash\/ - reject
+^https?:\/\/api-cfg\.wtzw\.com\/v\d\/offline-adv\/index - reject
+
+[Map Local]
+# 返回空 JSON，保持 App 正常逻辑而非崩溃
+^https?:\/\/api-cfg\.wtzw\.com\/v\d\/operation\/index\?ad_personal_switch data-type=text data="{}" status-code=200 header="Content-Type:application/json"
+^https?:\/\/api-bc\.wtzw\.com\/api\/v4\/search\/dispose data-type=text data="{}" status-code=200 header="Content-Type:application/json"
+^https?:\/\/api-bc\.wtzw\.com\/api\/v\d\/book-store\/config data-type=text data="{}" status-code=200 header="Content-Type:application/json"
+^https?:\/\/api-bc\.wtzw\.com\/api\/v\d\/book-store\/push-book data-type=text data="{}" status-code=200 header="Content-Type:application/json"
+^https?:\/\/api-bc\.wtzw\.com\/api\/v\d\/operation data-type=text data="{}" status-code=200 header="Content-Type:application/json"
+^https?:\/\/api-gw\.wtzw\.com\/welf\/app\/v\d\/task\/red-packet data-type=text data="{}" status-code=200 header="Content-Type:application/json"
+^https?:\/\/cdn\.wtzw\.com\/bookimg\/free\/api\/v\d\/reader\/reader-copy-paragraph-all\.json data-type=text data="{}" status-code=200 header="Content-Type:application/json"
+^https?:\/\/xiaoshuo\.wtzw\.com\/api\/v\d\/withdraw\/init data-type=text data="{}" status-code=200 header="Content-Type:application/json"
+
+[Script]
+# 移除「我的」页面个人中心功能区中的广告位（等价于 luestr 的 jq delpaths func_area[1,2]）
+http-response ^https?:\/\/xiaoshuo\.wtzw\.com\/api\/v\d\/user\/my-center\? script-path=Modules/qimao.js, requires-body=1, timeout=15, tag=qimao-mycenter
+
+[MITM]
+hostname = %APPEND% api-cfg.wtzw.com, api-bc.wtzw.com, api-gw.wtzw.com, cdn.wtzw.com, xiaoshuo.wtzw.com, sf3-fe-tos.pglstatp-toutiao.com, api-access.pangolin-sdk-toutiao-b.com, api-access.pangolin-sdk-toutiao.com, api-access.pangolin-sdk-toutiao1.com, open.e.kuaishou.cn, p1-lm.adukwai.com, lf-cdn-tos.bytescm.com, dsp-x.jd.com
