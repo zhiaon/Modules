@@ -1,5 +1,39 @@
 # 更新日志
 
+## V1.23 (2026-11-03)
+
+摘除整个 `[Script]` 段。
+
+### 删掉的东西
+
+```
+[Script]
+番茄内容清理 = type=http-response,pattern=^https?:\/\/(?:.*\.)?(?:fqnovel\.com|reading\.snssdk\.com|ichannel\.snssdk\.com)\/.*$,requires-body=1,max-size=1048576,binary-body-mode=0,timeout=15,script-path=.../fanqie_clean.js
+```
+
+### 为什么删
+
+番茄对 `api5-normal-sinfonlinec.fqnovel.com`、`frontier100-toutiao-lf.fqnovel.com` 做了**证书固定**。V1.17 实测把这两个域加进 MITM：
+
+```
+MITM failed ... certificate pinning
+in=0B
+```
+
+App 直接断连。也就是说 `requires-body=1` 的 http-response 脚本在番茄主接口上永远拿不到响应体，`fanqie_clean.js` **一次都不会真的跑起来**。
+
+留着它的唯一后果是误导：别人看模块会以为「响应体清理在生效」，从而把排查方向搞错。所以整段摘掉。
+
+### 影响面
+
+- 功能零变化——本来就是死代码
+- `[MITM]` 段**保留不动**。它服务的是 `[URL Rewrite]` 里那些 `_ reject` 规则，跟脚本无关
+- 130 行的 `[URL Rewrite]` 继续生效（pangolin / pglstatp / pstatp / snssdk 广告路径）
+
+### 仓库里的 surge_scripts/fanqie_clean.js
+**保留文件不删**。历史归档，万一以后番茄放开证书固定可以直接恢复 [Script] 段。只是不再被任何模块引用。
+
+---
 ## V1.22 (2026-11-03)
 
 撤回 `pddpic.com` 整族拦截。同 V1.21 一个性质：**共享 CDN 不能整族拦**。
