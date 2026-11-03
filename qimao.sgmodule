@@ -1,7 +1,7 @@
 #!name=七猫小说去广告
 #!version=1.1.5
-#!desc=移除七猫小说广告。新增 hc-ssp.sm.cn、ai.advertisement.alibabacorp.sm.cn、reachmax.cn 拦截；已含七猫自建广告平台全网、UBiX 天璇、UC/汇川生态
-#!author=zhiaon
+#!desc=v1.1.5：补 hc-ssp.sm.cn、ai.advertisement.alibabacorp.sm.cn、reachmax.cn
+#!author=许舟
 #!icon=https://raw.githubusercontent.com/luestr/IconResource/main/App_icon/120px/SevenCat.png
 #!category=去广告
 #!openUrl=https://apps.apple.com/app/id1387717110
