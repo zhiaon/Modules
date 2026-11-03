@@ -1,5 +1,56 @@
 # 更新日志
 
+## V1.18 (2026-11-03)
+
+V1.17 之后**底部广告仍然常驻**。再抓一轮发现根本原因：V1.17 是"逐主机列举"，而字节电商广告是整族动态下发，落地哪里不固定。
+
+### 教训：必须整族拦截
+V1.17 只拦了当次抓到的 `isaas5-normal-lf` / `ecom5-normal-lf` / `ecom3-normal-lf` / `ecset5-core-gl2` / `ecset3-core-gl2`。同族继续直连的还有：
+
+- `ecom-normal-m.ecombdapi.com`
+- `ec5-core-lf.ecombdapi.com`
+- `ecset5-core-m-zjg.ecombdapi.com`
+- `ecom5-normal-m-zjg.ecombdapi.com`
+- `isaas3-normal-lf.ecombdapi.com`
+- `mix.ecombdapi.com`
+
+改为后缀整族拒绝：
+```
+DOMAIN-SUFFIX,ecombdapi.com,REJECT
+DOMAIN-SUFFIX,ecombdstatic.com,REJECT
+DOMAIN-SUFFIX,yingt.fun,REJECT
+DOMAIN-SUFFIX,ndcpp.com,REJECT
+```
+
+### 新发现的两条常驻轮询
+- `orzonera.yingt.fun` —— 30 秒内连打 9 次，每次 3.5–4.7KB，间隔中位数 **0.3 秒**。APISIX 网关，根路径返回 `{"error_msg":"404 Route Not Found"}`，无正式产品页，证书却是 DigiCert RapidSSL。
+- `vc-brain-lf.ndcpp.com:9681` —— UDP 心跳，间隔 **0.8 秒**。
+
+两者特征都不像正常业务，与广告展示周期同步，整族拒绝。
+
+### 修复规则顺序坑（关键）
+原文件第 46 行有 `DOMAIN-SUFFIX,bytegecko.com,DIRECT`，而短剧广告源规则写在它**后面**。Surge 按顺序匹配、先命中就定，所以：
+
+```
+lf-webcast-gr-sourcecdn.bytegecko.com  →  命中 bytegecko DIRECT（广告源一直没被拦）
+```
+
+V1.17 加的那条 `DOMAIN-KEYWORD,webcast-gr-sourcecdn.bytegecko.com,REJECT` 从来没生效过。本版把三条关键词规则提到 bytegecko DIRECT 之前：
+```
+DOMAIN-KEYWORD,webcast-gr-sourcecdn,REJECT
+DOMAIN-KEYWORD,webcastcdn-tos,REJECT
+DOMAIN-KEYWORD,webcast-cdn-tos,REJECT
+```
+
+### 验证
+- 广告侧全部 REJECT：`isaas5` / `ec5-core-lf` / `lf1-fe.ecombdstatic` / `orzonera.yingt.fun` / `vc-brain-lf.ndcpp` / `lf-webcast-gr-sourcecdn` / `lf5-webcast-cdn-tos` / `lf1-webcastcdn-tos`
+- 正文侧零误伤：`api5-normal-lf.fqnovel.com`、`p3-reading-sign.fqnovelpic.com`、`reading.snssdk.com`、`n98-lf-cdn-tos-ncdn.bytegecko.com`、`p3-novel.byteimg.com`、`v95-se-zjwztc-reading-video.fqnovelvod.com` 全部 DIRECT
+
+### 一个无法绕开的限制
+这次试过给 `*.ecombdapi.com` 开 MITM 想抓路径，结果：`Replica=1` 开了 HTTP 捕获，`dump recent` 里完整 URL **始终 0 条**；`isaas5` 直接变成 `QUIC-BLOCK`。番茄全系（fqnovel / amemv / ecombdapi / douyin）走 QUIC 优先且证书固定，**只能做域名层拦截，拿不到响应体**。所以不要指望用脚本改广告 JSON。
+
+---
+
 ## V1.17 (2026-11-03)
 
 阅读页两条**常驻**广告链路封堵。用户截图确认：正文中部一张「短剧推荐卡」（*下山先结婚这个神医会功夫 / 全集免费 / 全90集 / 播放全集*），底部一条浮层（*重生1990之美女如云 / 互动剧 / 查看详情*）。V1.16 后两条都还在。
