@@ -1,5 +1,5 @@
 #!name=番茄小说去广告
-#!desc=V1.22：撤回 pddpic 拦截（拼多多App图片全挂），活动卡改靠接口断供
+#!desc=V1.23：摘除失效的 [Script] 段（番茄证书固定，fanqie_clean.js 永远跑不起来，纯占位误导）；V1.22 基础：撤回 pddpic 拦截（会误伤拼多多App图片），活动卡改靠接口断供，仅做 SNI/域名层拦截
 #!author=许舟
 
 [Rule]
@@ -121,9 +121,6 @@ DOMAIN-SUFFIX,ecombdstatic.com,REJECT,extended-matching
 DOMAIN-SUFFIX,yingt.fun,REJECT,extended-matching
 DOMAIN-SUFFIX,ndcpp.com,REJECT,extended-matching
 USER-AGENT,ttplayer*,REJECT
-
-[Script]
-番茄内容清理 = type=http-response,pattern=^https?:\/\/(?:.*\.)?(?:fqnovel\.com|reading\.snssdk\.com|ichannel\.snssdk\.com)\/.*$,requires-body=1,max-size=1048576,binary-body-mode=0,timeout=15,script-path=https://raw.githubusercontent.com/zhiaon/Modules/main/surge_scripts/fanqie_clean.js
 
 [URL Rewrite]
 # 章末广告 / 广告 SDK
