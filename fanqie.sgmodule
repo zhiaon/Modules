@@ -1,5 +1,5 @@
 #!name=番茄小说去广告
-#!desc=V1.18：ecombdapi/ecombdstatic 整族拦截，修复 bytegecko 规则顺序，补 yingt.fun/ndcpp.com
+#!desc=V1.19：webcast/douyin 开放平台与 sourcecdn 改整族拦截（webcast3-open-lf 变体漏网）
 #!author=许舟
 
 [Rule]
@@ -41,8 +41,12 @@ DOMAIN-SUFFIX,pangolin-sdk-toutiao.com,REJECT,extended-matching
 DOMAIN-SUFFIX,pglstatp-toutiao.com,REJECT,extended-matching
 DOMAIN-SUFFIX,toutiaocloud.com,REJECT,extended-matching
 DOMAIN-SUFFIX,toutiaocloud.net,REJECT,extended-matching
-# 短剧广告源必须在下面的 bytegecko 整域 DIRECT 之前命中（Surge 按顺序匹配，先命中就定）
+# 短剧/直播广告源关键词必须放在下面的 bytegecko 整域 DIRECT 之前
+# （Surge 按顺序匹配，先命中就定；放在后面等于白写）
+# 整族关键词：实测 App 会在 gr/dy/normal、lf/gl2/m-zjg 等变体间轮换，逐主机列举永远漏
 DOMAIN-KEYWORD,webcast-gr-sourcecdn,REJECT,extended-matching
+DOMAIN-KEYWORD,gr-sourcecdn,REJECT,extended-matching
+DOMAIN-KEYWORD,dy-sourcecdn,REJECT,extended-matching
 DOMAIN-KEYWORD,webcastcdn-tos,REJECT,extended-matching
 DOMAIN-KEYWORD,webcast-cdn-tos,REJECT,extended-matching
 # ByteGecko 是资源/热更新 CDN，硬拦截会触发番茄反复重试，改为直连降噪
@@ -102,9 +106,9 @@ DOMAIN-SUFFIX,p3-ad-sign.byteimg.com,REJECT,extended-matching
 # ===== V1.18 阅读页两条常驻广告链路 =====
 # 1) 正文中间的「短剧推荐卡」（播放全集 / 全90集）：广告投放 + 短剧开放平台 + 封面素材
 DOMAIN,frontier100-toutiao-lf.fqnovel.com,REJECT,extended-matching
-DOMAIN,webcast-open.douyin.com,REJECT,extended-matching
-DOMAIN,webcast5-open-lf.douyin.com,REJECT,extended-matching
-DOMAIN,content-open.douyin.com,REJECT,extended-matching
+# douyin 开放平台整族：webcast-open / webcast3-open-lf / webcast5-open-lf / content-open 全覆盖
+DOMAIN-KEYWORD,-open.douyin.com,REJECT,extended-matching
+DOMAIN-KEYWORD,-open-lf.douyin.com,REJECT,extended-matching
 DOMAIN,p11-webcast-sign.douyinpic.com,REJECT,extended-matching
 DOMAIN,p3-webcast-sign.douyinpic.com,REJECT,extended-matching
 # 2) 底部常驻浮层（互动剧 / 查看详情）：电商广告下发与素材
