@@ -1,5 +1,50 @@
 # 更新日志
 
+## V1.22 (2026-11-03)
+
+撤回 `pddpic.com` 整族拦截。同 V1.21 一个性质：**共享 CDN 不能整族拦**。
+
+- 撤掉 `DOMAIN-SUFFIX,pddpic.com,REJECT`、`static-2.pddpic.com`、`promotion-2.pddpic.com`
+- 顺手确认 `commimg-1.pddpic.com`、`api.pinduoduo.com` 全程未动
+- 保留 `*-open.douyin.com` / `*-open-lf.douyin.com`（内容开放平台接口）、`p11/p3-webcast-sign.douyinpic.com`（活动卡面素材）拦截
+- `is.snssdk.com`、`gecko*.zijieapi.com` 仍放行，是后续唯一有嫌疑的落点
+
+### 「完结2周年」活动卡结论
+番茄自家运营位，非第三方广告。形态是「接口下发 + 图片素材 + 视频流」三件套：
+
+| 层 | 域名 | 能不能拦 |
+|---|---|---|
+| 接口 | `*-open-lf.douyin.com` | 能，已拦 |
+| 卡面素材 | `p*-webcast-sign.douyinpic.com` | 能，已拦 |
+| 图片通用图床 | `douyinpic.com` 主域 | **不能**，和抖音 App 共用 |
+| 视频流 | `douyinvod.com` | **不能**，和抖音 App 共用 |
+
+番茄有证书固定，无法 MITM 按路径区分「这条是广告视频、那条是用户刷的视频」，域名层到此见底。
+
+---
+
+## V1.21 (2026-11-03)
+
+撤回 `douyinvod.com` 整族拦截 —— 这是抖音 App 本体的视频 CDN，番茄广告卡只是借用。
+
+- 误拦时表现：抖音视频全部无法播放
+- 撤回后 `v26-dyseries.douyinvod.com`、`v11-colds.douyinvod.com` 恢复 DIRECT
+- `v95-se-zjwztc-reading-video.fqnovelvod.com` 一直未动
+
+### 教训（现已固化为铁律）
+拦共享 CDN 前必须先确认域名归属：
+
+| 域名 | 归属 | 结论 |
+|---|---|---|
+| `ecombdapi.com` / `ecombdstatic.com` | 字节电商广告专用 | 可整族拦 |
+| `yingt.fun` / `ndcpp.com` | 无正式产品页的可疑轮询 | 可整族拦 |
+| `douyinvod.com` | 抖音视频 CDN | **禁止整族拦** |
+| `pddpic.com` | 拼多多素材 CDN | **禁止整族拦** |
+| `douyinpic.com` | 抖音通用图床 | **禁止整族拦** |
+
+判据：只有确认「单一用途 + 广告专用」的域才能整族拦；凡是给多个 App 供图的 CDN，一律用精确域名或干脆不动。
+
+---
 ## V1.18 (2026-11-03)
 
 V1.17 之后**底部广告仍然常驻**。再抓一轮发现根本原因：V1.17 是"逐主机列举"，而字节电商广告是整族动态下发，落地哪里不固定。
