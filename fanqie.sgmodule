@@ -1,6 +1,5 @@
 #!name=番茄小说去广告
 #!desc=V1.18：广告改「整族后缀拦截」——实测逐个列实例永远漏，ecom5/isaas5/ecset5 只是当次抓到的，同族还有 ecom-normal-m、ec5-core-lf、isaas3、ecset5-core-m-zjg、ecom5-normal-m-zjg 继续下发；改 DOMAIN-SUFFIX 拦 ecombdapi.com / ecombdstatic.com（电商广告全家桶）、yingt.fun、ndcpp.com（后两条为新增高频常驻轮询，0.3s/0.8s 一次）。同时修复规则顺序坑：webcast 广告源关键词原在 bytegecko 整域 DIRECT 之后，永远命不中，已提到其前面。V1.17：正文短剧推荐卡（frontier100-toutiao-lf + webcast-open/content-open.douyin.com + *-webcast-sign.douyinpic.com）；V1.16 mgsdk-sign；V1.15 埋点家族。frontier-aweme 保持精确域名（关键词覆盖会导致段评白屏）
-#!desc=阅读页两条常驻广告链路封堵——正文中部「短剧推荐卡」（frontier100-toutiao-lf.fqnovel.com 投放 + webcast-open/content-open.douyin.com + *-webcast-sign.douyinpic.com 封面素材）与底部常驻浮层「互动剧/查看详情」（isaas5/ecset/ecom 系 ecombdapi）。V1.16：新增 mgsdk-sign.byteimg.com 广告推广素材拦截；V1.15 基础：埋点 -lf/-hl/-lq 家族、luckycat、abtest3-misc-lf、ecombdimg 素材家族、ecomuser 改 REJECT；frontier-aweme 保持精确域名（关键词覆盖会导致段评白屏）
 #!author=Codex
 
 [Rule]
