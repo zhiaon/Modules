@@ -1,6 +1,6 @@
 #!name=番茄小说去广告
 #!desc=V1.18：ecombdapi/ecombdstatic 整族拦截，修复 bytegecko 规则顺序，补 yingt.fun/ndcpp.com
-#!author=Codex
+#!author=许舟
 
 [Rule]
 # 统一标准：按广告链路的域名家族与 SNI/Host 拦截，不追随可变 CDN IP，避免误伤头像/图片 CDN
