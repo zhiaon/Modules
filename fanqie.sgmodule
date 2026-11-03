@@ -1,5 +1,5 @@
 #!name=番茄小说去广告
-#!desc=V1.20：补 douyinvod 短剧视频流与 pddpic 拼多多素材域拦截
+#!desc=V1.21：撤回 douyinvod 整族拦截（误伤抖音App视频播放），保留 pddpic 素材域拦截
 #!author=许舟
 
 [Rule]
@@ -109,10 +109,6 @@ DOMAIN,frontier100-toutiao-lf.fqnovel.com,REJECT,extended-matching
 # douyin 开放平台整族：webcast-open / webcast3-open-lf / webcast5-open-lf / content-open 全覆盖
 DOMAIN-KEYWORD,-open.douyin.com,REJECT,extended-matching
 DOMAIN-KEYWORD,-open-lf.douyin.com,REJECT,extended-matching
-# V1.20：douyinvod 整族（抖音短剧视频流，广告卡里的视频播放源）
-# 番茄阅读页自己的视频走 fqnovelvod.com，不受影响；「免费看视频」功能也不在阅读页
-DOMAIN-SUFFIX,douyinvod.com,REJECT,extended-matching
-DOMAIN-KEYWORD,idouyinvod.com,REJECT,extended-matching
 # V1.20：拼多多素材图床（活动卡片的图片实际从 pddpic 加载，混在字节素材里）
 DOMAIN-KEYWORD,pddpic.com,REJECT,extended-matching
 DOMAIN,p11-webcast-sign.douyinpic.com,REJECT,extended-matching
