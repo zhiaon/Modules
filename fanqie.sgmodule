@@ -1,5 +1,6 @@
 #!name=番茄小说去广告
-#!desc=V1.17：阅读页两条常驻广告链路封堵——正文中部「短剧推荐卡」（frontier100-toutiao-lf.fqnovel.com 投放 + webcast-open/content-open.douyin.com + *-webcast-sign.douyinpic.com 封面素材）与底部常驻浮层「互动剧/查看详情」（isaas5/ecset/ecom 系 ecombdapi）。V1.16：新增 mgsdk-sign.byteimg.com 广告推广素材拦截；V1.15 基础：埋点 -lf/-hl/-lq 家族、luckycat、abtest3-misc-lf、ecombdimg 素材家族、ecomuser 改 REJECT；frontier-aweme 保持精确域名（关键词覆盖会导致段评白屏）
+#!desc=V1.18：广告域名改「整族后缀拦截」——实测只逐个列实例会永远漏，ecom5/isaas5/ecset5 只是当次抓到的那几台，同族还有 ecom-normal-m、ec5-core-lf、isaas3、ecset5-core-m-zjg、ecom5-normal-m-zjg 继续下发广告；本版改 DOMAIN-SUFFIX 拦 ecombdapi.com / ecombdstatic.com（电商广告全家桶）、yingt.fun、ndcpp.com（新增的两条常驻轮询，0.3s/次）。V1.17：正文中部「短剧推荐卡」（frontier100-toutiao-lf 投放 + webcast-open/content-open.douyin.com + *-webcast-sign.douyinpic.com）；V1.16 mgsdk-sign.byteimg.com；V1.15 埋点 -lf/-hl/-lq 家族等。frontier-aweme 保持精确域名（关键词覆盖会导致段评白屏）
+#!desc=阅读页两条常驻广告链路封堵——正文中部「短剧推荐卡」（frontier100-toutiao-lf.fqnovel.com 投放 + webcast-open/content-open.douyin.com + *-webcast-sign.douyinpic.com 封面素材）与底部常驻浮层「互动剧/查看详情」（isaas5/ecset/ecom 系 ecombdapi）。V1.16：新增 mgsdk-sign.byteimg.com 广告推广素材拦截；V1.15 基础：埋点 -lf/-hl/-lq 家族、luckycat、abtest3-misc-lf、ecombdimg 素材家族、ecomuser 改 REJECT；frontier-aweme 保持精确域名（关键词覆盖会导致段评白屏）
 #!author=Codex
 
 [Rule]
@@ -95,7 +96,7 @@ DOMAIN-SUFFIX,jr.jd.com,REJECT,extended-matching
 DOMAIN-SUFFIX,ccc-x.jd.com,REJECT,extended-matching
 DOMAIN-SUFFIX,knicks.jd.com,REJECT,extended-matching
 DOMAIN-SUFFIX,p3-ad-sign.byteimg.com,REJECT,extended-matching
-# ===== V1.17 阅读页两条常驻广告链路 =====
+# ===== V1.18 阅读页两条常驻广告链路 =====
 # 1) 正文中间的「短剧推荐卡」（播放全集 / 全90集）：广告投放 + 短剧开放平台 + 封面素材
 DOMAIN,frontier100-toutiao-lf.fqnovel.com,REJECT,extended-matching
 DOMAIN,webcast-open.douyin.com,REJECT,extended-matching
@@ -103,13 +104,14 @@ DOMAIN,webcast5-open-lf.douyin.com,REJECT,extended-matching
 DOMAIN,content-open.douyin.com,REJECT,extended-matching
 DOMAIN,p11-webcast-sign.douyinpic.com,REJECT,extended-matching
 DOMAIN,p3-webcast-sign.douyinpic.com,REJECT,extended-matching
-DOMAIN-KEYWORD,webcast-gr-sourcecdn.bytegecko.com,REJECT,extended-matching
 # 2) 底部常驻浮层（互动剧 / 查看详情）：电商广告下发与素材
-DOMAIN,isaas5-normal-lf.ecombdapi.com,REJECT,extended-matching
-DOMAIN,ecset5-core-gl2.ecombdapi.com,REJECT,extended-matching
-DOMAIN,ecset3-core-gl2.ecombdapi.com,REJECT,extended-matching
-DOMAIN-KEYWORD,ecom5-normal-lf.ecombdapi.com,REJECT,extended-matching
-DOMAIN-KEYWORD,ecom3-normal-lf.ecombdapi.com,REJECT,extended-matching
+# V1.18 改整族拦截：实测 ecom5/ecom3/isaas5/ecset5/ecset3 只是当时抓到的实例，
+# 实际还有 ecom-normal-m / ec5-core-lf / isaas3 / ecset5-core-m-zjg / ecom5-normal-m-zjg 等
+# 同族主机继续下发。逐个域名写会永远漏，改按后缀整族拒绝。
+DOMAIN-SUFFIX,ecombdapi.com,REJECT,extended-matching
+DOMAIN-SUFFIX,ecombdstatic.com,REJECT,extended-matching
+DOMAIN-SUFFIX,yingt.fun,REJECT,extended-matching
+DOMAIN-SUFFIX,ndcpp.com,REJECT,extended-matching
 USER-AGENT,ttplayer*,REJECT
 
 [Script]
