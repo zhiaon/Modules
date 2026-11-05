@@ -1,6 +1,6 @@
 #!name=机场流量
 #!desc=V1.0：复制订阅链接进去就可以了
-#!author=zhiaon
+#!author=许舟
 #!category=网络
 #!icon=gauge.with.needle
 #!arguments=机场name1:填写机场名,订阅URL1:填写URL,重置日1:填写重置日,机场name2:填写机场名,订阅URL2:填写URL,重置日2:填写重置日,机场name3:填写机场名,订阅URL3:填写URL,重置日3:填写重置日,机场name4:填写机场名,订阅URL4:填写URL,重置日4:填写重置日,机场name5:填写机场名,订阅URL5:填写URL,重置日5:填写重置日,机场name6:填写机场名,订阅URL6:填写URL,重置日6:填写重置日
