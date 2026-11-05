@@ -38,8 +38,6 @@ function isBlank(v) {
   if (/^(https?:\/\/)?example\.com/i.test(v)) return true;
   if (/^https?:\/\/订阅链接/i.test(v)) return true;
   if (/^机场\d+$/.test(v)) return true;
-  if (/^(图标|图标名|填图标|选图标|图标库URL|图标库)$/i.test(v)) return true;
-  if (/^填写?(图标|图标库)/.test(v)) return true;
   return false;
 }
 function real(v) { return isBlank(v) ? '' : String(v).trim(); }
@@ -70,7 +68,6 @@ for (var gi = 0; gi < 6; gi++) {
   });
 }
 
-
 // 公共重置日：第一个填了的值，都没有就 1
 var FALLBACK_DAY = 1;
 for (var fi = 0; fi < AIRPORTS.length; fi++) {
@@ -79,44 +76,6 @@ for (var fi = 0; fi < AIRPORTS.length; fi++) {
 AIRPORTS.forEach(function (a) { if (!a.day) a.day = FALLBACK_DAY; });
 
 var UA = 'Clash/1.18.0';
-
-// ---------------- 图标 ----------------
-// Surge 面板的 icon 参数只认 SF Symbol 名称（系统字体图标），
-// 不认 PNG/JPG 图片链接。所以这里直接填 symbol 名。
-var ICON_RAW = real(raw(18));
-
-var DEFAULT_ICON = 'gauge.with.needle';
-
-// 校验：SF Symbol 只能是小写字母、数字、点、连字符
-function isSymbolName(t) {
-  return /^[a-z0-9][a-z0-9.\-]*$/.test(t) && t.length >= 3;
-}
-
-// 把用户填的值变成可用的 symbol
-function resolveIcon(v) {
-  var t = String(v || '').trim();
-  if (!t) return { symbol: DEFAULT_ICON, warn: '' };
-
-  // 填了图片链接：面板不支持
-  if (/^https?:\/\//i.test(t) || /\.(png|jpe?g|gif|webp|svg)$/i.test(t)) {
-    return { symbol: DEFAULT_ICON, warn: '\u56fe\u7247\u94fe\u63a5\u4e0d\u652f\u6301\uff0c\u6539\u586b SF Symbol' };
-  }
-  // 常见误填：写了中文或带空格
-  if (!isSymbolName(t.toLowerCase())) {
-    return { symbol: DEFAULT_ICON, warn: '\u540d\u5b57\u4e0d\u5408\u6cd5\uff0c\u53ea\u80fd\u5199 SF Symbol' };
-  }
-  return { symbol: t.toLowerCase(), warn: '' };
-}
-
-// 卡片图标：由 render 时按机场数量决定
-var DEFAULT_ICON = 'gauge.with.needle';
-
-function iconColor(pct) {
-  if (pct === null || pct === undefined || pct < 0) return '#007AFF';
-  if (pct >= 100) return '#FF3B30';
-  if (pct >= 90) return '#FF9500';
-  return '#34C759';
-}
 
 // ---------------- 工具 ----------------
 function pad(n) { return n < 10 ? '0' + n : '' + n; }
@@ -367,66 +326,14 @@ function render(items) {
   else if (maxPct >= 90) style = 'alert';
   else if (maxPct < 0) style = 'info';
 
-  // 图标：全局一格，所有机场共用
-  var iconRes = resolveIcon(ICON_RAW);
-  var icon = iconRes.symbol;
-  if (iconRes.warn) L.push('\u26a0\ufe0f ' + iconRes.warn);
-
   $done({
     title: (stale ? '\u26a0\ufe0f ' : '') + title,
     content: L.join('\n'),
-    style: style,
-    icon: icon,
-    'icon-color': iconColor(maxPct)
+    style: style
   });
 }
 
 // ---------------- 主流程 ----------------
-function mainDone(stale, okN) {}
-
-function fetchSubs(valid, after) {
-  var pending = valid.length;
-  if (!pending) { after(); return; }
-
-  valid.forEach(function (it) {
-    var req = {
-      url: it.sub,
-      headers: {
-        'User-Agent': UA,
-        'Accept': '*/*',
-        'Accept-Encoding': 'identity'
-      },
-      timeout: 15
-    };
-
-    $httpClient.get(req, function (err, resp, data) {
-      var info = null;
-      if (!err && resp) {
-        var hdr = getHeader(resp.headers, 'subscription-userinfo');
-        if (!hdr) {
-          var alts = ['userinfo', 'x-userinfo', 'traffic-userinfo'];
-          for (var i = 0; i < alts.length && !hdr; i++) hdr = getHeader(resp.headers, alts[i]);
-        }
-        if (hdr) info = parseUserInfo(hdr);
-        if (info && info.total === undefined && info.download === undefined && info.upload === undefined) info = null;
-        if (!info && data) info = parseBody(data);
-      }
-
-      if (info) {
-        info.t = Date.now();
-        saveCache(it.key, info);
-        it.info = info;
-      } else {
-        var c = loadCache(it.key);
-        if (c) { it.info = c; it.stale = true; }
-        else it.err = err ? String(err) : (resp ? 'HTTP ' + resp.status + ' \u65e0\u6d41\u91cf\u5934' : '\u65e0\u54cd\u5e94');
-      }
-
-      if (--pending === 0) after();
-    });
-  });
-}
-
 if (AIRPORTS.length === 0) {
   $done({
     title: '\u673a\u573a\u6d41\u91cf',
@@ -435,21 +342,58 @@ if (AIRPORTS.length === 0) {
       '\u673a\u573aname1 / \u8ba2\u9605URL1 / \u91cd\u7f6e\u65e51\n' +
       '\u673a\u573aname2 / \u8ba2\u9605URL2 / \u91cd\u7f6e\u65e52\n' +
       '\u2026\u2026 \u76f4\u5230\u673a\u573aname6 / \u8ba2\u9605URL6 / \u91cd\u7f6e\u65e56\n\n' +
-      '\u6700\u540e\u4e24\u683c\uff1a\u56fe\u6807 / \u56fe\u6807\u5e93URL\uff08\u6240\u6709\u673a\u573a\u5171\u7528\uff09',
+      '\u54ea\u7ec4\u4e0d\u7528\uff0c\u90a3\u4e09\u683c\u5199\u300c\u7559\u7a7a\u300d\u5373\u53ef',
     style: 'info'
   });
 } else {
   var valid = AIRPORTS.filter(function (it) {
     return /^https?:\/\/[^\s]+\./i.test(it.sub);
   });
+  var pending = valid.length;
 
-  if (!valid.length) {
+  if (!pending) {
     $done({
       title: '\u673a\u573a\u6d41\u91cf',
       content: '\u8ba2\u9605\u94fe\u63a5\u683c\u5f0f\u4e0d\u5bf9\n\n\u5fc5\u987b\u662f\u5b8c\u6574 https \u94fe\u63a5',
       style: 'error'
     });
   } else {
-    fetchSubs(valid, function () { render(AIRPORTS); });
+    valid.forEach(function (it) {
+      var req = {
+        url: it.sub,
+        headers: {
+          'User-Agent': UA,
+          'Accept': '*/*',
+          'Accept-Encoding': 'identity'
+        },
+        timeout: 15
+      };
+
+      $httpClient.get(req, function (err, resp, data) {
+        var info = null;
+        if (!err && resp) {
+          var hdr = getHeader(resp.headers, 'subscription-userinfo');
+          if (!hdr) {
+            var alts = ['userinfo', 'x-userinfo', 'traffic-userinfo'];
+            for (var i = 0; i < alts.length && !hdr; i++) hdr = getHeader(resp.headers, alts[i]);
+          }
+          if (hdr) info = parseUserInfo(hdr);
+          if (info && info.total === undefined && info.download === undefined && info.upload === undefined) info = null;
+          if (!info && data) info = parseBody(data);
+        }
+
+        if (info) {
+          info.t = Date.now();
+          saveCache(it.key, info);
+          it.info = info;
+        } else {
+          var c = loadCache(it.key);
+          if (c) { it.info = c; it.stale = true; }
+          else it.err = err ? String(err) : (resp ? 'HTTP ' + resp.status + ' \u65e0\u6d41\u91cf\u5934' : '\u65e0\u54cd\u5e94');
+        }
+
+        if (--pending === 0) render(AIRPORTS);
+      });
+    });
   }
 }
