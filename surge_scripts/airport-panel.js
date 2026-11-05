@@ -29,9 +29,13 @@ function isBlank(v) {
   v = String(v || '').trim();
   if (!v) return true;
   if (/^(空|无|none|null|undefined|nil|-)$/i.test(v)) return true;
+  // 参数页占位词：用户不填时这里会原样保留这些字，一律当空
+  if (/^(留空|不填|空着|不用|无需|跳过|未填)$/.test(v)) return true;
   if (/^<.+>$/.test(v)) return true;
-  if (/^请?填/.test(v)) return true;
+  if (/^请?填/.test(v)) return true;   // 参数页占位提示：填机场名 / 填订阅链接 / 填重置日
   if (/^(https?:\/\/)?example\.com/i.test(v)) return true;
+  if (/^https?:\/\/订阅链接/i.test(v)) return true;
+  if (/^机场\d+$/.test(v)) return true;
   return false;
 }
 function real(v) { return isBlank(v) ? '' : String(v).trim(); }
