@@ -9,7 +9,10 @@
 //   4 指定策略（可空 / none）
 //   5 订阅链接 ②（分号分隔）
 //   6 订阅链接 ③（分号分隔）
-// 三格订阅槽合计可放 6 个以上机场
+//   7 订阅链接 ④
+//   8 订阅链接 ⑤
+//   9 订阅链接 ⑥
+// 六个订阅槽，每槽还可用分号再放多个，合计 6 个以上机场
 // ============================================================
 
 var ARG = (typeof $argument !== 'undefined' && $argument) ? String($argument) : '';
@@ -41,9 +44,10 @@ function list(s) {
 // ---- 机场名 ----
 var NAMES = list(raw(0));
 
-// ---- 订阅链接：三格合并 ----
+// ---- 订阅链接：六个槽位合并（每格仍可用分号再放多个） ----
+var SLOTS = [1, 5, 6, 7, 8, 9];
 var SUBS = [];
-[1, 5, 6].forEach(function (idx) {
+SLOTS.forEach(function (idx) {
   list(raw(idx)).forEach(function (u) { SUBS.push(u); });
 });
 
@@ -329,9 +333,8 @@ if (SUBS.length === 0) {
       '\u2462 \u6bcf\u6708\u91cd\u7f6e\u65e5\n' +
       '\u2463 UA\uff08\u9ed8\u8ba4 Clash\uff09\n' +
       '\u2464 \u6307\u5b9a\u7b56\u7565\uff08\u53ef\u7a7a\uff09\n' +
-      '\u2465 \u8ba2\u9605\u94fe\u63a5 \u2461\n' +
-      '\u2466 \u8ba2\u9605\u94fe\u63a5 \u2462\n\n' +
-      '\u4e09\u683c\u8ba2\u9605\u90fd\u53ef\u7528\u5206\u53f7\u653e\u591a\u4e2a\uff0c\u5408\u8ba1\u652f\u6301 6 \u4e2a\u4ee5\u4e0a\u673a\u573a',
+      '\u2465\u2466\u2467\u2468\u2469 \u8ba2\u9605\u94fe\u63a5 \u2461-\u2465\n\n' +
+      '\u516d\u683c\u8ba2\u9605\u90fd\u53ef\u7528\u5206\u53f7\u518d\u653e\u591a\u4e2a',
     style: 'info'
   });
 } else {
@@ -363,8 +366,7 @@ if (SUBS.length === 0) {
           '\u2462 \u6bcf\u6708\u91cd\u7f6e\u65e5\n' +
           '\u2463 UA\uff08\u9ed8\u8ba4 Clash\uff09\n' +
           '\u2464 \u6307\u5b9a\u7b56\u7565\uff08\u53ef\u7a7a\uff09\n' +
-          '\u2465 \u8ba2\u9605\u94fe\u63a5 \u2461\n' +
-          '\u2466 \u8ba2\u9605\u94fe\u63a5 \u2462'
+          '\u2465-\u2469 \u8ba2\u9605\u94fe\u63a5 \u2461-\u2465'
         : '\u8ba2\u9605\u94fe\u63a5\u683c\u5f0f\u4e0d\u5bf9\n\n\u5fc5\u987b\u662f\u5b8c\u6574 https \u94fe\u63a5',
       style: isPlaceholder ? 'info' : 'error'
     });
