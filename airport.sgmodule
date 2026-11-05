@@ -10,4 +10,4 @@
 机场流量 = title="{{{name}}}",content="数据加载中…\n\n点这张卡右上角的刷新按钮立即拉取，或等下次自动更新（10 分钟）",style=info,script-name=机场流量,update-interval=600
 
 [Script]
-机场流量 = type=generic,script-path=https://raw.githubusercontent.com/zhiaon/Modules/main/surge_scripts/airport-panel.js,argument="{{{name}}}|{{{url1}}}|{{{resetday}}}|{{{ua}}}|{{{policy}}}|{{{url2}}}|{{{url3}}}|{{{url4}}}|{{{url5}}}|{{{url6}}}",timeout=60
+机场流量 = type=generic,script-path=https://raw.githubusercontent.com/zhiaon/Modules/main/surge_scripts/airport-panel.js?v=20261105c,argument="{{{name}}}|{{{url1}}}|{{{resetday}}}|{{{ua}}}|{{{policy}}}|{{{url2}}}|{{{url3}}}|{{{url4}}}|{{{url5}}}|{{{url6}}}",timeout=60
