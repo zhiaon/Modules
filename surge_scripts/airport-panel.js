@@ -31,6 +31,8 @@ function isBlank(v) {
   if (/^(空|无|none|null|undefined|nil|-)$/i.test(v)) return true;
   // 参数页占位词：用户不填时这里会原样保留这些字，一律当空
   if (/^(留空|不填|空着|不用|无需|跳过|未填)$/.test(v)) return true;
+  if (/^填写?(机场名|名称|url|链接|订阅|重置日|日期|号)$/i.test(v)) return true;
+  if (/^填写.*(机场名|URL|链接|重置日|订阅)$/i.test(v)) return true;
   if (/^<.+>$/.test(v)) return true;
   if (/^请?填/.test(v)) return true;   // 参数页占位提示：填机场名 / 填订阅链接 / 填重置日
   if (/^(https?:\/\/)?example\.com/i.test(v)) return true;
