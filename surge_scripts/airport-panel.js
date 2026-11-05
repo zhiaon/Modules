@@ -69,7 +69,6 @@ function fmtB(b) {
   if (b === null || b === undefined || isNaN(b)) return '--';
   var g = b / GB;
   if (g >= 1024) return (g / 1024).toFixed(2) + ' TB';
-  if (g >= 100) return g.toFixed(1) + ' GB';
   if (g >= 10) return g.toFixed(1) + ' GB';
   return g.toFixed(2) + ' GB';
 }
@@ -242,7 +241,8 @@ function blockTight(d, name, stale) {
   var L = [];
   var pct = pctOf(d);
 
-  L.push('\u2708\ufe0f ' + name + '   ' + (total > 0 ? fmtS(total) : '\u4e0d\u9650'));
+  L.push((stale ? '\u26a0\ufe0f ' : '\u2708\ufe0f ') + name + '   ' +
+    (total > 0 ? fmtS(total) : '\u4e0d\u9650'));
 
   if (total > 0) {
     L.push('\u5df2\u7528 ' + fmtS(used) + '  \u5269 ' + fmtS(Math.max(0, total - used)) +
@@ -254,8 +254,8 @@ function blockTight(d, name, stale) {
   L.push('\u2191' + fmtS(up) + '  \u2193' + fmtS(down) + '  ' + md(resetInfo().date) + ' \u91cd\u7f6e');
 
   var exp = expireOf(d.expire);
-  if (stale) L.push('\u26a0\ufe0f \u672c\u6b21\u62c9\u53d6\u5931\u8d25\uff0c\u663e\u793a\u7f13\u5b58');
-  else if (exp) L.push('\u5230\u671f ' + ymd(exp) + ' \u00b7 ' + daysTo(exp) + ' \u5929');
+  if (exp) L.push('\u5230\u671f ' + ymd(exp) + ' \u00b7 ' + daysTo(exp) + ' \u5929');
+  if (stale) L.push('\u7f13\u5b58\u6570\u636e');
 
   return L;
 }
