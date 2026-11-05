@@ -1,15 +1,16 @@
 // ============================================================
-// 机场流量面板 · Surge 通用版  v2.0
+// 机场流量面板 · Surge 通用版  v3.0
 // 数据源：订阅链接响应头 subscription-userinfo（V2board / SSPanel / 新V2 通用）
 //
-// 参数为「一个机场一组」，共 6 组，组内自带机场名与订阅链接：
-//   0 name1   1 url1
-//   2 name2   3 url2
-//   4 name3   5 url3
-//   6 name4   7 url4
-//   8 name5   9 url5
-//  10 name6  11 url6
-//  12 resetday   13 ua   14 policy
+// 参数：一个机场一组三格（机场名 / 订阅链接 / 重置日），共 6 组
+//   0 name1   1 url1   2 day1
+//   3 name2   4 url2   5 day2
+//   6 name3   7 url3   8 day3
+//   9 name4  10 url4  11 day4
+//  12 name5  13 url5  14 day5
+//  15 name6  16 url6  17 day6
+//  18 ua     19 policy
+// 每组的重置日留空时，自动回退到第一个填了重置日的机场，再回退到 1 号
 // ============================================================
 
 var ARG = (typeof $argument !== 'undefined' && $argument) ? String($argument) : '';
@@ -18,7 +19,6 @@ var P = ARG.split('|');
 function raw(i) {
   if (P[i] === undefined) return '';
   var v = String(P[i]).trim();
-  // 花括号里的值 Surge 会原样替换，去掉可能残留的引号
   if (v.length >= 2 && v.charAt(0) === '"' && v.charAt(v.length - 1) === '"') {
     v = v.slice(1, -1).trim();
   }
@@ -31,22 +31,30 @@ function isBlank(v) {
   if (/^(空|无|none|null|undefined|nil|-)$/i.test(v)) return true;
   if (/^<.+>$/.test(v)) return true;
   if (/^请?填/.test(v)) return true;
-  if (/^example\.com/i.test(v) || /^https?:\/\/example\.com/i.test(v)) return true;
+  if (/^(https?:\/\/)?example\.com/i.test(v)) return true;
   return false;
 }
 function real(v) { return isBlank(v) ? '' : String(v).trim(); }
 
+function hash(s) {
+  var h = 5381;
+  for (var i = 0; i < s.length; i++) h = ((h << 5) + h + s.charCodeAt(i)) | 0;
+  return (h >>> 0).toString(36);
+}
+
 var GB = 1073741824;
 
-// ---------------- 参数：6 组机场 ----------------
+// ---------------- 参数：6 组机场（名 + 链接 + 重置日） ----------------
 var AIRPORTS = [];
 for (var gi = 0; gi < 6; gi++) {
-  var nm = real(raw(gi * 2));
-  var ur = real(raw(gi * 2 + 1));
-  if (!ur) continue;                       // 没填链接就跳过
+  var nm = real(raw(gi * 3));
+  var ur = real(raw(gi * 3 + 1));
+  var dy = parseInt(real(raw(gi * 3 + 2)), 10);
+  if (!ur) continue;
   AIRPORTS.push({
     name: nm || ('\u673a\u573a' + (gi + 1)),
     sub: ur,
+    day: (dy >= 1 && dy <= 31) ? dy : null,
     key: 'apt_' + hash(ur),
     info: null,
     stale: false,
@@ -54,11 +62,14 @@ for (var gi = 0; gi < 6; gi++) {
   });
 }
 
-var RDAY = parseInt(real(raw(12)) || '1', 10);
-if (!(RDAY >= 1 && RDAY <= 31)) RDAY = 1;
-var UA = real(raw(13)) || 'Clash/1.18.0';
-var POLICY = real(raw(14));
-if (POLICY && /^none$/i.test(POLICY)) POLICY = '';
+// 公共重置日：第一个填了的值，都没有就 1
+var FALLBACK_DAY = 1;
+for (var fi = 0; fi < AIRPORTS.length; fi++) {
+  if (AIRPORTS[fi].day) { FALLBACK_DAY = AIRPORTS[fi].day; break; }
+}
+AIRPORTS.forEach(function (a) { if (!a.day) a.day = FALLBACK_DAY; });
+
+var UA = 'Clash/1.18.0';
 
 // ---------------- 工具 ----------------
 function pad(n) { return n < 10 ? '0' + n : '' + n; }
@@ -92,12 +103,6 @@ function bar(pct, n) {
   return s;
 }
 
-function hash(s) {
-  var h = 5381;
-  for (var i = 0; i < s.length; i++) h = ((h << 5) + h + s.charCodeAt(i)) | 0;
-  return (h >>> 0).toString(36);
-}
-
 function getHeader(h, key) {
   if (!h) return '';
   var lk = String(key).toLowerCase();
@@ -119,7 +124,6 @@ function parseUserInfo(s) {
   return o;
 }
 
-// 少数机场把用量塞在 body JSON 里
 function parseBody(s) {
   if (!s || s.length > 400000) return null;
   var j;
@@ -144,17 +148,17 @@ function parseBody(s) {
   return null;
 }
 
-// 下次重置日：每月固定某天，小月自动取月末
-function resetInfo() {
+// 按该机场自己的重置日算下次重置
+function resetInfo(day) {
   var now = new Date();
   var y = now.getFullYear(), m = now.getMonth(), d = now.getDate();
-  var dayCur = Math.min(RDAY, new Date(y, m + 1, 0).getDate());
+  var dayCur = Math.min(day, new Date(y, m + 1, 0).getDate());
   var next, days;
   if (d <= dayCur) {
     next = new Date(y, m, dayCur);
     days = dayCur - d;
   } else {
-    var nd = Math.min(RDAY, new Date(y, m + 2, 0).getDate());
+    var nd = Math.min(day, new Date(y, m + 2, 0).getDate());
     next = new Date(y, m + 1, nd);
     days = Math.round((next - new Date(y, m, d)) / 86400000);
   }
@@ -193,8 +197,8 @@ function pctOf(d) {
   return ((Number(d.upload) || 0) + (Number(d.download) || 0)) / t * 100;
 }
 
-// ---------------- 区块：详细（只有 1 个机场） ----------------
-function blockFull(d, stale) {
+// ---------------- 单机场详细块（只有 1 个机场时） ----------------
+function blockFull(d, day, stale) {
   var up = Number(d.upload) || 0;
   var down = Number(d.download) || 0;
   var used = up + down;
@@ -214,8 +218,8 @@ function blockFull(d, stale) {
 
   L.push('\u2191 ' + fmtB(up) + '   \u2193 ' + fmtB(down));
 
-  var r = resetInfo();
-  L.push('\u91cd\u7f6e  \u6bcf\u6708 ' + RDAY + ' \u53f7 \u00b7 ' + md(r.date) +
+  var r = resetInfo(day);
+  L.push('\u91cd\u7f6e  \u6bcf\u6708 ' + day + ' \u53f7 \u00b7 ' + md(r.date) +
     (r.days === 0 ? '\uff08\u4eca\u5929\uff09' : '\uff08' + r.days + ' \u5929\u540e\uff09'));
 
   var exp = expireOf(d.expire);
@@ -231,8 +235,8 @@ function blockFull(d, stale) {
   return L;
 }
 
-// ---------------- 区块：紧凑（多机场） ----------------
-function blockTight(d, name, stale) {
+// ---------------- 单机场紧凑块（多机场时） ----------------
+function blockTight(d, name, day, stale) {
   var up = Number(d.upload) || 0;
   var down = Number(d.download) || 0;
   var used = up + down;
@@ -250,7 +254,8 @@ function blockTight(d, name, stale) {
     L.push('\u5df2\u7528 ' + fmtS(used) + '  \u4e0d\u9650');
   }
 
-  L.push('\u2191' + fmtS(up) + '  \u2193' + fmtS(down) + '  ' + md(resetInfo().date) + ' \u91cd\u7f6e');
+  var r = resetInfo(day);
+  L.push('\u2191' + fmtS(up) + '  \u2193' + fmtS(down) + '  ' + md(r.date) + ' \u91cd\u7f6e\u00b7' + day + '\u53f7');
 
   var exp = expireOf(d.expire);
   if (exp) L.push('\u5230\u671f ' + ymd(exp) + ' \u00b7 ' + daysTo(exp) + ' \u5929');
@@ -285,11 +290,12 @@ function render(items) {
     if (multi && idx > 0) L.push('');
     if (!it.info) {
       L.push('\u2708\ufe0f ' + it.name);
-      L.push('\u26a0\ufe0f \u83b7\u53d6\u5931\u8d25' + (it.err ? '\uff1a' + it.err : ''));
+      L.push('\u26a0\ufe0f \u83b7\u53d6\u5931\u8d25' + (it.err ? '\uff1a' + it.err : '') +
+        '  \u00b7\u6bcf\u6708' + it.day + '\u53f7\u91cd\u7f6e');
       return;
     }
-    L = L.concat(multi ? blockTight(it.info, it.name, it.stale)
-      : blockFull(it.info, it.stale));
+    L = L.concat(multi ? blockTight(it.info, it.name, it.day, it.stale)
+      : blockFull(it.info, it.day, it.stale));
   });
 
   if (multi && okN > 1) {
@@ -326,12 +332,11 @@ if (AIRPORTS.length === 0) {
   $done({
     title: '\u673a\u573a\u6d41\u91cf',
     content: '\u5c1a\u672a\u914d\u7f6e\u673a\u573a\n\n' +
-      '\u70b9\u6a21\u5757 \u2192 \u53c2\u6570\uff0c\u6bcf\u4e2a\u673a\u573a\u4e00\u7ec4\uff1a\n' +
-      '\u2460 \u673a\u573a1 \u540d\u5b57\n\u2461 \u673a\u573a1 \u8ba2\u9605\u94fe\u63a5\n' +
-      '\u2462 \u673a\u573a2 \u540d\u5b57\n\u2463 \u673a\u573a2 \u8ba2\u9605\u94fe\u63a5\n' +
-      '\u2026\u2026 \u4f9d\u6b64\u7c7b\u63a8\u5230\u673a\u573a6\n' +
-      '\u2464 \u6bcf\u6708\u91cd\u7f6e\u65e5 \u2465 UA \u2466 \u6307\u5b9a\u7b56\u7565\n\n' +
-      '\u54ea\u4e2a\u673a\u573a\u4e0d\u7528\uff0c\u628a\u5b83\u90a3\u4e24\u683c\u7559\u7a7a\u5373\u53ef',
+      '\u70b9\u6a21\u5757 \u2192 \u53c2\u6570\uff0c\u6bcf\u4e2a\u673a\u573a\u4e09\u683c\u4e00\u7ec4\uff1a\n' +
+      '\u2460 \u673a\u573a1 \u540d\u5b57\n\u2461 \u673a\u573a1 \u8ba2\u9605\u94fe\u63a5\n\u2462 \u673a\u573a1 \u91cd\u7f6e\u65e5\n' +
+      '\u2463 \u673a\u573a2 \u540d\u5b57\n\u2464 \u673a\u573a2 \u8ba2\u9605\u94fe\u63a5\n\u2465 \u673a\u573a2 \u91cd\u7f6e\u65e5\n' +
+      '\u2026\u2026 \u4f9d\u6b64\u7c7b\u63a8\u5230\u673a\u573a6\n\n' +
+      '\u54ea\u4e2a\u673a\u573a\u4e0d\u7528\uff0c\u628a\u5b83\u90a3\u4e09\u683c\u7559\u7a7a\u5373\u53ef',
     style: 'info'
   });
 } else {
@@ -343,7 +348,7 @@ if (AIRPORTS.length === 0) {
   if (!pending) {
     $done({
       title: '\u673a\u573a\u6d41\u91cf',
-      content: '\u8ba2\u9605\u94fe\u63a5\u683c\u5f0f\u4e0d\u5bf9\n\n\u5fc5\u987b\u662f\u5b8c\u6574 https \u94fe\u63a5\uff0c\u4f8b\u5982\uff1a\nhttps://xxx.com/api/v1/client/subscribe?token=xxxx',
+      content: '\u8ba2\u9605\u94fe\u63a5\u683c\u5f0f\u4e0d\u5bf9\n\n\u5fc5\u987b\u662f\u5b8c\u6574 https \u94fe\u63a5',
       style: 'error'
     });
   } else {
@@ -357,7 +362,6 @@ if (AIRPORTS.length === 0) {
         },
         timeout: 15
       };
-      if (POLICY) req.policy = POLICY;
 
       $httpClient.get(req, function (err, resp, data) {
         var info = null;
