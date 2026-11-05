@@ -3,11 +3,11 @@
 #!author=zhiaon
 #!category=网络
 #!icon=gauge.with.needle
-#!arguments=name1:机场1,url1:https://example.com/sub,day1:1,name2:none,url2:none,day2:1,name3:none,url3:none,day3:1,name4:none,url4:none,day4:1,name5:none,url5:none,day5:1,name6:none,url6:none,day6:1
-#!arguments-desc=每个机场一组三格：名字 / 订阅链接 / 每月重置日，按顺序一一配对。不用哪个机场，把那一组三格留空（或保持 none）即可。\n【① name1 机场1 名字】面板里显示的名字，例：花云\n【② url1 机场1 订阅链接】完整 https 链接，带 ?token= 和 & 的部分全部照抄\n【③ day1 机场1 重置日】这家每月几号清零，1-31；填 31 遇到小月自动按当月最后一天算\n【④⑤⑥ 机场2：名字 / 链接 / 重置日】\n【⑦⑧⑨ 机场3：名字 / 链接 / 重置日】\n【⑩⑪⑫ 机场4：名字 / 链接 / 重置日】\n【⑬⑭⑮ 机场5：名字 / 链接 / 重置日】\n【⑯⑰⑱ 机场6：名字 / 链接 / 重置日】\n【说明】① 重置日留空时自动沿用第一个填了重置日的机场，全空就是 1 号。② 十八个参数由模块自动用英文竖线 | 拼给脚本，你不用管。③ 参数值里绝对不能出现英文逗号，Surge 会在逗号处截断整行。④ UA 固定 Clash/1.18.0，没有额外开关；某家不返回流量头时告诉我，我给它单独开分支。
+#!arguments=机场name1:机场1,订阅URL1:https://example.com/sub,重置日1:1,机场name2:none,订阅URL2:none,重置日2:1,机场name3:none,订阅URL3:none,重置日3:1,机场name4:none,订阅URL4:none,重置日4:1,机场name5:none,订阅URL5:none,重置日5:1,机场name6:none,订阅URL6:none,重置日6:1
+#!arguments-desc=每个机场一组三格：机场name / 订阅URL / 重置日，按顺序一一配对。不用哪个机场，把那一组三格留空（或保持 none）即可。\n【① 机场name1】面板里显示的名字，例：花云\n【② 订阅URL1】这家机场的完整 https 订阅链接，带 ?token= 和 & 的部分全部照抄\n【③ 重置日1】这家每月几号清零，1-31；填 31 遇到小月自动按当月最后一天算\n【④⑤⑥ 机场2：机场name2 / 订阅URL2 / 重置日2】\n【⑦⑧⑨ 机场3：机场name3 / 订阅URL3 / 重置日3】\n【⑩⑪⑫ 机场4：机场name4 / 订阅URL4 / 重置日4】\n【⑬⑭⑮ 机场5：机场name5 / 订阅URL5 / 重置日5】\n【⑯⑰⑱ 机场6：机场name6 / 订阅URL6 / 重置日6】\n【说明】① 重置日留空时自动沿用第一个填了重置日的机场，全空就是 1 号。② 十八个参数由模块自动用英文竖线 | 拼给脚本，你不用管。③ 参数值里绝对不能出现英文逗号，Surge 会在逗号处截断整行。④ UA 固定 Clash/1.18.0，走默认规则，没有额外开关。
 
 [Panel]
 机场流量 = title="机场流量",content="数据加载中…\n\n点这张卡右上角的刷新按钮立即拉取，或等下次自动更新（10 分钟）",style=info,script-name=机场流量,update-interval=600
 
 [Script]
-机场流量 = type=generic,script-path=https://cdn.jsdelivr.net/gh/zhiaon/Modules@main/surge_scripts/airport-panel.js,argument="{{{name1}}}|{{{url1}}}|{{{day1}}}|{{{name2}}}|{{{url2}}}|{{{day2}}}|{{{name3}}}|{{{url3}}}|{{{day3}}}|{{{name4}}}|{{{url4}}}|{{{day4}}}|{{{name5}}}|{{{url5}}}|{{{day5}}}|{{{name6}}}|{{{url6}}}|{{{day6}}}",timeout=60
+机场流量 = type=generic,script-path=https://cdn.jsdelivr.net/gh/zhiaon/Modules@main/surge_scripts/airport-panel.js,argument="{{{机场name1}}}|{{{订阅URL1}}}|{{{重置日1}}}|{{{机场name2}}}|{{{订阅URL2}}}|{{{重置日2}}}|{{{机场name3}}}|{{{订阅URL3}}}|{{{重置日3}}}|{{{机场name4}}}|{{{订阅URL4}}}|{{{重置日4}}}|{{{机场name5}}}|{{{订阅URL5}}}|{{{重置日5}}}|{{{机场name6}}}|{{{订阅URL6}}}|{{{重置日6}}}",timeout=60
