@@ -5,19 +5,19 @@
 ## 安装
 
 ```
-surge:///install-module?url=https%3A%2F%2Fraw.githubusercontent.com%2Fzhiaon%2FModules%2Fmain%2Fairport.sgmodule
+surge:///install-module?url=https%3A%2F%2Fraw.githubusercontent.com%2Fzhiaon%2FModules%2Fmain%2Fjichang.sgmodule
 ```
 
 或手动：Surge → 首页 → 模块 → 右上角 + → 粘贴
 
 ```
-https://raw.githubusercontent.com/zhiaon/Modules/main/airport.sgmodule
+https://raw.githubusercontent.com/zhiaon/Modules/main/jichang.sgmodule
 ```
 
 jsDelivr 备用地址：
 
 ```
-https://cdn.jsdelivr.net/gh/zhiaon/Modules@main/airport.sgmodule
+https://cdn.jsdelivr.net/gh/zhiaon/Modules@main/jichang.sgmodule
 ```
 
 ## 参数（装好后点模块 → 参数）
@@ -62,5 +62,5 @@ subscription-userinfo: upload=10737418240; download=53687091200; total=214748364
 
 ## 文件
 
-- `airport.sgmodule` — 模块本体（参数表 + Panel + Script）
+- `jichang.sgmodule` — 模块本体（参数表 + Panel + Script）
 - `surge_scripts/airport-panel.js` — 面板脚本
