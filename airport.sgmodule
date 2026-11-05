@@ -1,13 +1,13 @@
 #!name=机场流量
-#!desc=V1.3：订阅链接给出 6 个独立格子（url1~url6），每格还能用分号再塞多个；多机场自动切紧凑排版（3 行/机场）并在末尾给合计。在 Surge 策略页显示机场的总流量、已消耗、剩余、进度条、上行/下行、下次重置日与到期日；数据直读订阅响应头 subscription-userinfo，本机请求不经中转。
+#!desc=V2.0：六个机场各占一组参数（机场名 + 订阅链接一一配对），想用几个填几个，不用的两组留空。在 Surge 策略页显示每个机场的总流量、已消耗、剩余、进度条、上行/下行、下次重置日与到期日；多机场自动紧凑排版（3 行/机场）并给合计。数据直读订阅响应头 subscription-userinfo，本机请求不经过任何第三方中转。
 #!author=zhiaon
 #!category=网络
 #!icon=gauge.with.needle
-#!arguments=name:机场,url1:https://example.com/sub,url2:none,url3:none,url4:none,url5:none,url6:none,resetday:1,ua:Clash/1.18.0,policy:none
-#!arguments-desc=【① 机场名 name】面板标题显示的名字。多个机场用英文分号 ; 分隔，顺序与下面 url1~url6 的填写顺序一一对应。例：花云;云梯;奶牛;番墙;闪电;龟速。名字不够会自动补「机场N」，多了会忽略。\n【②~⑦ 订阅链接 url1~url6】每个格子填一个机场的订阅地址，6 格正好 6 个机场，一一对应。必须是完整 https 链接，带 ?token= 和 & 的部分全部照抄。某一格不用就保持 none。想在某一格里再放多个，用英文分号分隔（例：url1 填 https://a/sub?token=x;https://b/sub?token=y）。\n【⑧ 每月重置日 resetday】1 到 31，默认 1。所有机场共用；填 31 遇到小月自动按当月最后一天算。\n【⑨ UA ua】拉订阅用的 User-Agent，默认 Clash/1.18.0。提示「无流量头」时改成 Surge/5.16.0 或机场文档指定的 UA。\n【⑩ 指定策略 policy】拉订阅时强制走的策略名，默认 none 跟随规则。机场域名直连拉不到流量时填节点组名，例：节点选择。\n【排坑】① 十个参数由模块自动用英文竖线 | 拼接，你不用管。② 参数值里绝对不能出现英文逗号，Surge 会在逗号处截断整行。③ 同一格放多个链接用分号，别用逗号。④ 每格只放一个是最省心的用法。
+#!arguments=name1:机场1,url1:https://example.com/sub,name2:none,url2:none,name3:none,url3:none,name4:none,url4:none,name5:none,url5:none,name6:none,url6:none,resetday:1,ua:Clash/1.18.0,policy:none
+#!arguments-desc=每个机场一组两格：先填名字，再填它的订阅链接。不用哪个机场，把那一组两格都留空（或保持 none）。\n【① name1 机场1 名字】面板里显示的名字，例：花云\n【② url1 机场1 订阅链接】完整 https 链接，带 ?token= 和 & 的部分全部照抄\n【③ name2 机场2 名字】\n【④ url2 机场2 订阅链接】\n【⑤ name3 机场3 名字】\n【⑥ url3 机场3 订阅链接】\n【⑦ name4 机场4 名字】\n【⑧ url4 机场4 订阅链接】\n【⑨ name5 机场5 名字】\n【⑩ url5 机场5 订阅链接】\n【⑪ name6 机场6 名字】\n【⑫ url6 机场6 订阅链接】\n【⑬ resetday 每月重置日】1-31，默认 1，所有机场共用；填 31 遇到小月按当月最后一天算。各自重置日不同就填最早那个，或告我用哪家再做逐机场重置日\n【⑭ ua】拉订阅用的 User-Agent，默认 Clash/1.18.0；提示「无流量头」时改 Surge/5.16.0 或机场指定 UA\n【⑮ policy 指定策略】拉订阅时强制走的策略名，默认 none 跟随规则；机场域名被墙时填节点组名，例：节点选择\n【排坑】① 十五个参数由模块自动用英文竖线 | 拼给脚本，你不用管。② 参数值里绝对不能出现英文逗号，Surge 会在逗号处截断整行。③ 一个机场一格，链接里带分号也不影响。
 
 [Panel]
-机场流量 = title="{{{name}}}",content="数据加载中…\n\n点这张卡右上角的刷新按钮立即拉取，或等下次自动更新（10 分钟）",style=info,script-name=机场流量,update-interval=600
+机场流量 = title="机场流量",content="数据加载中…\n\n点这张卡右上角的刷新按钮立即拉取，或等下次自动更新（10 分钟）",style=info,script-name=机场流量,update-interval=600
 
 [Script]
-机场流量 = type=generic,script-path=https://raw.githubusercontent.com/zhiaon/Modules/main/surge_scripts/airport-panel.js?v=20261105c,argument="{{{name}}}|{{{url1}}}|{{{resetday}}}|{{{ua}}}|{{{policy}}}|{{{url2}}}|{{{url3}}}|{{{url4}}}|{{{url5}}}|{{{url6}}}",timeout=60
+机场流量 = type=generic,script-path=https://raw.githubusercontent.com/zhiaon/Modules/main/surge_scripts/airport-panel.js?v=20261105d,argument="{{{name1}}}|{{{url1}}}|{{{name2}}}|{{{url2}}}|{{{name3}}}|{{{url3}}}|{{{name4}}}|{{{url4}}}|{{{name5}}}|{{{url5}}}|{{{name6}}}|{{{url6}}}|{{{resetday}}}|{{{ua}}}|{{{policy}}}",timeout=60
