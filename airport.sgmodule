@@ -1,5 +1,5 @@
 #!name=机场流量
-#!desc=V1.0：在 Surge 策略页显示 6 个机场各自的流量用量与重置日，参数一机场一组，数据直读订阅响应头不经中转。
+#!desc=V1.0：复制订阅链接进去就可以了
 #!author=zhiaon
 #!category=网络
 #!icon=gauge.with.needle
