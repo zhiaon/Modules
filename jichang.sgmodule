@@ -1,14 +1,13 @@
 #!name=机场流量
-#!desc=V1.1：复制订阅链接进去就可以了
+#!desc=V1.3：复制订阅链接进去就可以了
 #!author=许舟
 #!category=网络
 #!icon=gauge.with.needle
-#!arguments=机场name1:填写机场名,订阅URL1:填写URL,重置日1:填写重置日,图标1:图标,机场name2:填写机场名,订阅URL2:填写URL,重置日2:填写重置日,图标2:图标,机场name3:填写机场名,订阅URL3:填写URL,重置日3:填写重置日,图标3:图标,机场name4:填写机场名,订阅URL4:填写URL,重置日4:填写重置日,图标4:图标,机场name5:填写机场名,订阅URL5:填写URL,重置日5:填写重置日,图标5:图标,机场name6:填写机场名,订阅URL6:填写URL,重置日6:填写重置日,图标6:图标,图标库URL:填写图标库JSON链接
-#!arguments-desc=把机场的订阅链接复制进去就可以了。\n六个机场各一组四格，想用几个填几个，不用的那组保持默认不动。\n\n【① 机场name】\n填机场名字，只用来显示，随便起。\n例：ikuuu、花云、云梯。\n名字里不要带英文逗号。\n\n【② 订阅URL】\n填这家机场的订阅地址。\n从机场后台复制整条 https 链接。\n?token= 后面那一长串、& 后面的参数，全部照抄，别截断。\n\n【③ 重置日】\n填这家机场每月几号流量清零，写数字 1 到 31。\n· 每月 6 号清零就填 6\n· 填 31 遇到小月（2 月、4 月等）自动按当月最后一天算\n· 留空则沿用第一个填了重置日的机场，全都空就按 1 号\n\n【④ 图标】\n从图标库里挑，三种写法都认：\n· 写 #2 表示库里第 2 个\n· 写库里的中文名，例：火箭\n· 直接写 SF Symbol，例：paperplane.fill\n不填则用默认仪表盘图标。\n\n【⑤ 图标库URL】\n全模块只填这一次，六个机场共用，不用每个机场重复填。\n填一个 JSON 链接，脚本自动读出里面的图标清单。\n支持这些格式：\n· ["airplane","globe"]\n· ["飞机|airplane"]\n· [{"name":"飞机","icon":"airplane"}]\n· {"飞机":"airplane"}\n· {"icons":[{"name":"..","symbol":".."}]}\n填好后在 Surge 面板里会多出一张「机场图标库」，\n上面列着所有可选的 #号 和名字，照着填进 ④ 就行。\n\n【编号对应】\nname1 + URL1 + 重置日1 + 图标1 是第 1 个机场。\nname2 + URL2 + 重置日2 + 图标2 是第 2 个，依此类推。\n四格必须填同一家，别串行。
+#!arguments=机场name1:填写机场名,订阅URL1:填写URL,重置日1:填写重置日,机场name2:填写机场名,订阅URL2:填写URL,重置日2:填写重置日,机场name3:填写机场名,订阅URL3:填写URL,重置日3:填写重置日,机场name4:填写机场名,订阅URL4:填写URL,重置日4:填写重置日,机场name5:填写机场名,订阅URL5:填写URL,重置日5:填写重置日,机场name6:填写机场名,订阅URL6:填写URL,重置日6:填写重置日,图标:填SF符号名
+#!arguments-desc=把机场的订阅链接复制进去就可以了。\n六个机场各一组三格，想用几个填几个，不用的那组保持默认不动。\n\n【① 机场name】\n填机场名字，只用来显示，随便起。\n例：ikuuu、花云、云梯。\n名字里不要带英文逗号。\n\n【② 订阅URL】\n填这家机场的订阅地址。\n从机场后台复制整条 https 链接。\n?token= 后面那一长串、& 后面的参数，全部照抄，别截断。\n\n【③ 重置日】\n填这家机场每月几号流量清零，写数字 1 到 31。\n· 每月 6 号清零就填 6\n· 填 31 遇到小月（2 月、4 月等）自动按当月最后一天算\n· 留空则沿用第一个填了重置日的机场，全都空就按 1 号\n\n【④ 图标】所有机场共用这一个图标，填 SF Symbol 名字。\n直接复制下面任意一个进去就能用：\n· paperplane.fill　飞机\n· airplane　飞机（线框）\n· gauge.with.needle　仪表盘（默认）\n· globe　地球\n· cloud.fill　云\n· bolt.fill　闪电\n· wifi　WiFi\n· antenna.radiowaves.left.and.right　信号\n· tortoise.fill　乌龟\n· speedometer　速度表\n· chart.pie.fill　饼图\n· externaldrive.fill　硬盘\n· network　网络\n· shield.lefthalf.filled　盾牌\n不填就用 gauge.with.needle。\n\n【注意】面板图标只支持 SF Symbol，也就是苹果系统字体图标。\n填图片链接（.png/.jpg）或图标包里的名字（如 China(1)）都用不了，\n面板会显示默认图标并在内容里提醒你改。\n想找更多 SF Symbol，可以装苹果官方的 SF Symbols App，\n或搜「SF Symbols 在线查」挑一个，复制名字填进来。\n\n【编号对应】\nname1 + URL1 + 重置日1 是第 1 个机场。\nname2 + URL2 + 重置日2 是第 2 个，依此类推。\n三格必须填同一家，别串行。
 
 [Panel]
 机场流量 = title="机场流量",content="数据加载中…\n\n点这张卡右上角的刷新按钮立即拉取，或等下次自动更新（10 分钟）",style=info,script-name=机场流量,update-interval=600
-机场图标库 = title="机场图标库",content="图标库未加载\n\n先在模块参数里填「图标库URL」",style=info,script-name=机场流量,update-interval=600
 
 [Script]
-机场流量 = type=generic,script-path=https://cdn.jsdelivr.net/gh/zhiaon/Modules@main/surge_scripts/airport-panel.js,argument="{{{机场name1}}}|{{{订阅URL1}}}|{{{重置日1}}}|{{{图标1}}}|{{{机场name2}}}|{{{订阅URL2}}}|{{{重置日2}}}|{{{图标2}}}|{{{机场name3}}}|{{{订阅URL3}}}|{{{重置日3}}}|{{{图标3}}}|{{{机场name4}}}|{{{订阅URL4}}}|{{{重置日4}}}|{{{图标4}}}|{{{机场name5}}}|{{{订阅URL5}}}|{{{重置日5}}}|{{{图标5}}}|{{{机场name6}}}|{{{订阅URL6}}}|{{{重置日6}}}|{{{图标6}}}|{{{图标库URL}}}",timeout=60
+机场流量 = type=generic,script-path=https://cdn.jsdelivr.net/gh/zhiaon/Modules@main/surge_scripts/airport-panel.js,argument="{{{机场name1}}}|{{{订阅URL1}}}|{{{重置日1}}}|{{{机场name2}}}|{{{订阅URL2}}}|{{{重置日2}}}|{{{机场name3}}}|{{{订阅URL3}}}|{{{重置日3}}}|{{{机场name4}}}|{{{订阅URL4}}}|{{{重置日4}}}|{{{机场name5}}}|{{{订阅URL5}}}|{{{重置日5}}}|{{{机场name6}}}|{{{订阅URL6}}}|{{{重置日6}}}|{{{图标}}}",timeout=60

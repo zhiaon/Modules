@@ -55,22 +55,21 @@ var GB = 1073741824;
 // ---------------- 参数：6 组机场（名 + 链接 + 重置日） ----------------
 var AIRPORTS = [];
 for (var gi = 0; gi < 6; gi++) {
-  var nm = real(raw(gi * 4));
-  var ur = real(raw(gi * 4 + 1));
-  var dy = parseInt(real(raw(gi * 4 + 2)), 10);
-  var ic = real(raw(gi * 4 + 3));
+  var nm = real(raw(gi * 3));
+  var ur = real(raw(gi * 3 + 1));
+  var dy = parseInt(real(raw(gi * 3 + 2)), 10);
   if (!ur) continue;
   AIRPORTS.push({
     name: nm || ('\u673a\u573a' + (gi + 1)),
     sub: ur,
     day: (dy >= 1 && dy <= 31) ? dy : null,
-    iconRaw: ic,
     key: 'apt_' + hash(ur),
     info: null,
     stale: false,
     err: ''
   });
 }
+
 
 // 公共重置日：第一个填了的值，都没有就 1
 var FALLBACK_DAY = 1;
@@ -81,84 +80,32 @@ AIRPORTS.forEach(function (a) { if (!a.day) a.day = FALLBACK_DAY; });
 
 var UA = 'Clash/1.18.0';
 
-// ---------------- 图标库 ----------------
-var ICONLIB_URL = real(raw(24));
-var LIB = [];          // [{key, symbol}]
-var LIB_ERR = '';
-var LIB_LOADED = false;
+// ---------------- 图标 ----------------
+// Surge 面板的 icon 参数只认 SF Symbol 名称（系统字体图标），
+// 不认 PNG/JPG 图片链接。所以这里直接填 symbol 名。
+var ICON_RAW = real(raw(18));
 
-// 兼容多种图标库 JSON 写法：
-//   ["a.b","c.d"]                     纯数组
-//   ["名字|symbol", ...]              字符串带竖线
-//   [{"name":"飞机","icon":"airplane"}] / {"name":..,"symbol":..}
-//   {"icons":[...]} / {"data":[...]} / {"list":[...]}
-//   {"飞机":"airplane", ...}          对象映射
-function normalizeLib(j) {
-  var arr = null;
-  if (Array.isArray(j)) arr = j;
-  else if (j && typeof j === 'object') {
-    var keys = ['icons', 'data', 'list', 'items', 'symbols'];
-    for (var i = 0; i < keys.length; i++) {
-      if (Array.isArray(j[keys[i]])) { arr = j[keys[i]]; break; }
-    }
-    if (!arr) {
-      // 对象映射 {名字: symbol}
-      arr = [];
-      for (var k in j) {
-        if (typeof j[k] === 'string') arr.push({ name: k, icon: j[k] });
-      }
-    }
-  }
-  if (!arr) return [];
+var DEFAULT_ICON = 'gauge.with.needle';
 
-  var out = [];
-  for (var n = 0; n < arr.length; n++) {
-    var it = arr[n], key = '', sym = '';
-    if (typeof it === 'string') {
-      var t = it.trim();
-      if (!t) continue;
-      if (t.indexOf('|') > 0) {
-        var p2 = t.split('|');
-        key = p2[0].trim(); sym = p2[1].trim();
-      } else if (t.indexOf(':') > 0 && t.indexOf('.') < 0) {
-        var p3 = t.split(':');
-        key = p3[0].trim(); sym = p3[1].trim();
-      } else {
-        sym = t; key = t;
-      }
-    } else if (it && typeof it === 'object') {
-      key = String(it.name || it.key || it.label || it.title || it.id || '').trim();
-      sym = String(it.icon || it.symbol || it.sf || it.value || it.symbolName || '').trim();
-      if (!sym && key) sym = key;
-      if (!key) key = sym;
-    }
-    if (!sym) continue;
-    out.push({ key: key, symbol: sym });
-  }
-  return out;
+// 校验：SF Symbol 只能是小写字母、数字、点、连字符
+function isSymbolName(t) {
+  return /^[a-z0-9][a-z0-9.\-]*$/.test(t) && t.length >= 3;
 }
 
-// 把一个格子的值解析成 SF Symbol 名
-// 支持：#3（库中第 3 个）、库里的名字、库里的 symbol、或直接写 symbol
+// 把用户填的值变成可用的 symbol
 function resolveIcon(v) {
   var t = String(v || '').trim();
-  if (!t) {
-    // 没填：库里有就用第一个，否则默认
-    if (LIB.length) return LIB[0].symbol;
-    return '';
+  if (!t) return { symbol: DEFAULT_ICON, warn: '' };
+
+  // 填了图片链接：面板不支持
+  if (/^https?:\/\//i.test(t) || /\.(png|jpe?g|gif|webp|svg)$/i.test(t)) {
+    return { symbol: DEFAULT_ICON, warn: '\u56fe\u7247\u94fe\u63a5\u4e0d\u652f\u6301\uff0c\u6539\u586b SF Symbol' };
   }
-  var m = t.match(/^#(\d+)$/);
-  if (m) {
-    var idx = parseInt(m[1], 10) - 1;
-    if (LIB[idx]) return LIB[idx].symbol;
-    return '';
+  // 常见误填：写了中文或带空格
+  if (!isSymbolName(t.toLowerCase())) {
+    return { symbol: DEFAULT_ICON, warn: '\u540d\u5b57\u4e0d\u5408\u6cd5\uff0c\u53ea\u80fd\u5199 SF Symbol' };
   }
-  for (var i = 0; i < LIB.length; i++) {
-    if (LIB[i].key === t || LIB[i].symbol === t) return LIB[i].symbol;
-  }
-  // 库里找不到就当直接写 symbol
-  if (/^[a-z0-9][a-z0-9.\-]*$/i.test(t)) return t;
-  return '';
+  return { symbol: t.toLowerCase(), warn: '' };
 }
 
 // 卡片图标：由 render 时按机场数量决定
@@ -420,13 +367,10 @@ function render(items) {
   else if (maxPct >= 90) style = 'alert';
   else if (maxPct < 0) style = 'info';
 
-  // 图标：单机场用该机场选的，多机场用第一个有图标的，都没有用默认
-  var icon = '';
-  for (var ii = 0; ii < items.length; ii++) {
-    var r2 = resolveIcon(items[ii].iconRaw);
-    if (r2) { icon = r2; break; }
-  }
-  if (!icon) icon = DEFAULT_ICON;
+  // 图标：全局一格，所有机场共用
+  var iconRes = resolveIcon(ICON_RAW);
+  var icon = iconRes.symbol;
+  if (iconRes.warn) L.push('\u26a0\ufe0f ' + iconRes.warn);
 
   $done({
     title: (stale ? '\u26a0\ufe0f ' : '') + title,
@@ -483,111 +427,15 @@ function fetchSubs(valid, after) {
   });
 }
 
-function fetchIconLib(after) {
-  var libKey = 'iconlib_' + hash(ICONLIB_URL || 'default');
-
-  function useCache() {
-    var c = loadCache(libKey);
-    if (c && c.lib && c.lib.length) { LIB = c.lib; }
-    after();
-  }
-
-  if (!ICONLIB_URL || !/^https?:\/\//i.test(ICONLIB_URL)) {
-    // 没填库链接：读旧缓存（用户可能刚删链接）
-    var c0 = loadCache(libKey);
-    if (c0 && c0.lib && c0.lib.length) LIB = c0.lib;
-    after();
-    return;
-  }
-
-  var finished = false;
-  function once(fn) {
-    if (finished) return;
-    finished = true;
-    fn();
-  }
-
-  $httpClient.get({
-    url: ICONLIB_URL,
-    headers: { 'Accept': 'application/json,text/plain,*/*', 'Accept-Encoding': 'identity' },
-    timeout: 10
-  }, function (err, resp, data) {
-    once(function () {
-      if (!err && data) {
-        var parsed = null;
-        try { parsed = JSON.parse(String(data).trim()); } catch (e) { LIB_ERR = 'JSON \u89e3\u6790\u5931\u8d25'; }
-        if (parsed) {
-          var arr = normalizeLib(parsed);
-          if (arr.length) {
-            LIB = arr;
-            LIB_LOADED = true;
-            LIB_ERR = '';
-            saveCache(libKey, { lib: arr, t: Date.now() });
-            after();
-            return;
-          }
-          LIB_ERR = '\u56fe\u6807\u5e93\u683c\u5f0f\u4e0d\u8ba4\u8bc6';
-        }
-      } else {
-        LIB_ERR = err ? String(err) : '\u65e0\u54cd\u5e94';
-      }
-      useCache();
-    });
-  });
-
-  setTimeout(function () { once(useCache); }, 11000);
-}
-
-// ---------------- 图标库浏览面板 ----------------
-function renderLibPanel() {
-  var L = [];
-  if (!LIB.length) {
-    L.push('\u56fe\u6807\u5e93\u6ca1\u52a0\u8f7d\u6210\u529f');
-    if (LIB_ERR) L.push('\u539f\u56e0\uff1a' + LIB_ERR);
-    L.push('');
-    L.push('\u53bb\u6a21\u5757\u53c2\u6570\u628a\u300c\u56fe\u6807\u5e93URL\u300d\u586b\u4e0a\uff0c');
-    L.push('\u4e00\u4e2a JSON \u94fe\u63a5\u3002\u652f\u6301\u8fd9\u51e0\u79cd\u5199\u6cd5\uff1a');
-    L.push('· ["airplane","globe"]');
-    L.push('· ["\u98de\u673a|airplane"]');
-    L.push('· [{"name":"\u98de\u673a","icon":"airplane"}]');
-    L.push('· {"\u98de\u673a":"airplane"}');
-    L.push('· {"icons":[{"name":"..","symbol":".."}]}');
-    $done({ title: '\u673a\u573a\u56fe\u6807\u5e93', content: L.join('\n'), style: 'info' });
-    return;
-  }
-
-  L.push('\u5171 ' + LIB.length + ' \u4e2a\u56fe\u6807');
-  L.push('\u628a #\u53f7 \u6216\u56fe\u6807\u540d\u586b\u5230\u673a\u573a\u90a3\u7ec4\u7684\u300c\u56fe\u6807\u300d\u683c');
-  L.push('');
-
-  var limit = Math.min(LIB.length, 40);
-  for (var i = 0; i < limit; i++) {
-    var it = LIB[i];
-    var line = '#' + (i + 1) + '  ' + it.key;
-    if (it.key !== it.symbol) line += '\n      ' + it.symbol;
-    L.push(line);
-  }
-  if (LIB.length > limit) {
-    L.push('');
-    L.push('\u2026\u2026 \u8fd8\u6709 ' + (LIB.length - limit) + ' \u4e2a\u672a\u663e\u793a');
-  }
-
-  $done({ title: '\u673a\u573a\u56fe\u6807\u5e93', content: L.join('\n'), style: 'good' });
-}
-
-var IS_LIB_PANEL = (typeof $input !== 'undefined' && $input && /图标库/.test(String($input.panelName || '')));
-
-if (IS_LIB_PANEL) {
-  fetchIconLib(function () { renderLibPanel(); });
-} else if (AIRPORTS.length === 0) {
+if (AIRPORTS.length === 0) {
   $done({
     title: '\u673a\u573a\u6d41\u91cf',
     content: '\u5c1a\u672a\u914d\u7f6e\u673a\u573a\n\n' +
-      '\u70b9\u6a21\u5757 \u2192 \u53c2\u6570\uff0c\u516d\u7ec4\u5404\u81ea\u56db\u683c\uff1a\n' +
-      '\u673a\u573aname1 / \u8ba2\u9605URL1 / \u91cd\u7f6e\u65e51 / \u56fe\u68071\n' +
-      '\u673a\u573aname2 / \u8ba2\u9605URL2 / \u91cd\u7f6e\u65e52 / \u56fe\u68072\n' +
-      '\u2026\u2026 \u76f4\u5230\u673a\u573aname6 / \u8ba2\u9605URL6 / \u91cd\u7f6e\u65e56 / \u56fe\u68076\n\n' +
-      '\u4e0d\u7528\u7684\u90a3\u7ec4\u4fdd\u6301\u9ed8\u8ba4\u5360\u4f4d\u6587\u5b57\u4e0d\u52a8\u5373\u53ef',
+      '\u70b9\u6a21\u5757 \u2192 \u53c2\u6570\uff0c\u516d\u7ec4\u5404\u81ea\u4e09\u683c\uff1a\n' +
+      '\u673a\u573aname1 / \u8ba2\u9605URL1 / \u91cd\u7f6e\u65e51\n' +
+      '\u673a\u573aname2 / \u8ba2\u9605URL2 / \u91cd\u7f6e\u65e52\n' +
+      '\u2026\u2026 \u76f4\u5230\u673a\u573aname6 / \u8ba2\u9605URL6 / \u91cd\u7f6e\u65e56\n\n' +
+      '\u6700\u540e\u4e24\u683c\uff1a\u56fe\u6807 / \u56fe\u6807\u5e93URL\uff08\u6240\u6709\u673a\u573a\u5171\u7528\uff09',
     style: 'info'
   });
 } else {
@@ -602,8 +450,6 @@ if (IS_LIB_PANEL) {
       style: 'error'
     });
   } else {
-    fetchIconLib(function () {
-      fetchSubs(valid, function () { render(AIRPORTS); });
-    });
+    fetchSubs(valid, function () { render(AIRPORTS); });
   }
 }
