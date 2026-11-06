@@ -180,7 +180,9 @@ function cnSuffix(region, city) {
   var r = String(region || '').trim();
   var c = String(city || '').trim();
   var isCJK = function (s) { return /[\u4e00-\u9fa5]/.test(s); };
-  if (r && isCJK(r) && !/(省|自治区|市|特别行政区)$/.test(r)) r += '省';
+  // 「中国」「中国香港」这类国家级名字不能再补「省」
+  var isCountryLevel = /^(中国|中华人民共和国|中国香港|中国台湾|中国澳门|香港|台湾|澳门)$/.test(r);
+  if (r && isCJK(r) && !isCountryLevel && !/(省|自治区|市|特别行政区)$/.test(r)) r += '省';
   if (c && isCJK(c) && !/(市|区|县|盟|地区)$/.test(c) && !/自治州$/.test(c)) c += '市';
   if (r === c) c = '';
   return [r, c];
@@ -413,7 +415,7 @@ function probe(target, cb) {
     if (st.done || st.entry) return;
     st.polls++;
     scan();
-    if (st.polls < 30) setTimeout(poll, 150);
+    if (st.polls < 20) setTimeout(poll, 120);
   }
 
   function finalScan(n) {
@@ -459,7 +461,7 @@ function probe(target, cb) {
 
   setTimeout(poll, 50);
   trySource(0);
-  setTimeout(stop, 22000);
+  setTimeout(stop, 12000);
 }
 
 function enrich(target) {
@@ -573,7 +575,7 @@ function ipDetail(ip, cb) {
   }
 
   attempt(0);
-  setTimeout(function () { if (!done) localOnly(); }, 15000);
+  setTimeout(function () { if (!done) localOnly(); }, 8000);
 }
 
 // ---------------- 策略目标 ----------------
@@ -602,9 +604,23 @@ function resolveAndProbe(name, cb) {
 // ---------------- 网络环境 + 本机 ----------------
 
 function readNet() {
+  NET.ssid = '';
+  NET.isWifi = false;
   try {
     var n = $network || {};
-    if (n.wifi && n.wifi.ssid) NET.ssid = String(n.wifi.ssid);
+    var w = n.wifi || {};
+    var iface = (n.v4 && n.v4.primaryInterface) || '';
+
+    // Wi-Fi 名可能落在 ssid / SSID / network 几个位置，逐个试
+    var cands = [w.ssid, w.SSID, n.ssid, n.SSID];
+    for (var i = 0; i < cands.length; i++) {
+      var s = String(cands[i] === null || cands[i] === undefined ? '' : cands[i]).trim();
+      if (s && s !== 'null' && s !== 'undefined') { NET.ssid = s; break; }
+    }
+
+    // iOS 上 en0 = Wi-Fi，pdp_ip0 = 蜂窝
+    NET.isWifi = !!NET.ssid || !!(w && w.bssid) || iface === 'en0';
+
     if (n['cellular-data']) {
       NET.carrier = n['cellular-data'].carrier || '';
       NET.radio = n['cellular-data'].radio || '';
@@ -651,7 +667,7 @@ function probeLocal(cb) {
     });
   });
 
-  setTimeout(fin, 16000);
+  setTimeout(fin, 12000);
 }
 
 // ---------------- 渲染 ----------------
@@ -720,14 +736,12 @@ function render() {
     } else {
       L.push('落地 IP: -');
       L.push('位置: -');
-      L.push('运营商: ' + (o.err || '无响应'));
+      L.push('运营商: ' + (o.pending ? '检测中' : (o.err || '无响应')));
     }
   }
 
-  // ① 网络名
-  if (NET.ssid) L.push('SSID: ' + NET.ssid);
-  else if (NET.carrier) L.push('蜂窝: ' + (NET.carrier + ' ' + (NET.radio || '')).trim());
-  else L.push('SSID: -');
+  // ① 网络名：连着 Wi-Fi 就显示那家的名字（不管是谁的热点）；走蜂窝显示「蜂窝流量」
+  L.push('SSID: ' + (NET.ssid || (NET.isWifi ? '（未知）' : '蜂窝流量')));
 
   L.push('');
 
@@ -771,10 +785,18 @@ function addJob() {
   };
 }
 
+// 兜底收尾：任何一个探测卡住都不能让面板永远空白
+function watchdog(ms) {
+  setTimeout(function () {
+    if (!RENDERED) render();
+  }, ms);
+}
+
 // ---------------- 主流程 ----------------
 
 function run() {
   readNet();
+  watchdog(30000);
 
   var typed = splitTargets(ARG);
 
@@ -789,9 +811,17 @@ function run() {
 
     for (var i = 0; i < list.length; i++) {
       (function (nm, idx) {
+        // 先占位：即使探测超时，策略行也一定能在面板上出现
+        OUT[idx] = {
+          input: nm, title: nm, node: '', ref: nm, err: '',
+          isFinal: (nm === finName), pending: true,
+          outIP: '', outLoc: '', outISP: '', entryIP: '',
+          entryLoc: '', entryISP: '', entryCC: ''
+        };
         var jOne = addJob();
         resolveAndProbe(nm, function (res) {
           res.isFinal = (nm === finName);
+          res.pending = false;
           OUT[idx] = res;
           jOne();
         });
