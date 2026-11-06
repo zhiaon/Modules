@@ -1,0 +1,13 @@
+#!name=网络IP信息(本地)
+#!desc=显示当前网络的 IP 全链路：本机公网 IP、各策略组的真实入口 IP 与节点落地 IP，均含位置和运营商。兜底组常驻，不受参数影响。
+#!author=许舟
+#!category=网络
+#!icon=network
+#!arguments=目标:填写策略组名
+#!arguments-desc=【目标】可填策略组名或节点名，多个用竖线 | 分隔，例：Proxy|日本|小红书\n★ 无论这里填什么，FINAL 那条兜底策略组都会额外单独显示一份，不会因为填了别的就消失。\n留空则只显示兜底那一条。\n\n卡片字段含义：\nSSID = 当前 Wi-Fi 名（蜂窝网络时显示运营商）\n本地 IP = 不走代理的本机公网 IP\n位置 / 运营商 = 上面那个公网 IP 的归属\n◆策略 = 「组名 → 该组当前选中节点」，纯节点名则只显示节点名\n入口 = 这次请求在 Surge 活动连接里实际连出去的那一跳（真实中转入口）\n落地 IP = 走该策略真实请求时对端看到的出口\n执行时间 = 本次刷新时间，单独排在最底部
+
+[Panel]
+网络IP信息(本地) = title="网络IP信息",content="SSID: -\n\n本地 IP: -\n位置: -\n运营商: -\n\n────────────────\n◆策略: -\n入口: -\n位置: -\n运营商: -\n\n落地 IP: -\n位置: -\n运营商: -\n\n执行时间: -",style=info,script-name=网络IP信息(本地),update-interval=600
+
+[Script]
+网络IP信息(本地) = type=generic,script-path=Modules/surge-ipinfo.js,argument="{{{目标}}}",timeout=60
