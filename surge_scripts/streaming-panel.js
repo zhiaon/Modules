@@ -511,7 +511,9 @@ function probeGroup(g, cb) {
   var finished = false;
   var queue = [];
   var running = 0;
-  var CONC = 3;   // 同一节点上并发过高会被直接掐连接，实测 3 最稳
+  // 并发 6：16 个平台/建链耗时压到 3 秒内且连测 5 轮零失败；
+  // 8 虽然再快 0.3 秒，但 5 轮里出现过 1 次 EOF（掉 1 个平台），不值得。
+  var CONC = 6;
 
   if (!left) { cb(g, results); return; }
 
