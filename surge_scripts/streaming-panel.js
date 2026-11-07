@@ -1,5 +1,5 @@
 // ============================================================
-// 流媒体解锁面板 · Surge 通用版  V1.0
+// 流媒体解锁面板 · Surge 通用版  V1.2
 //
 // 逐个策略组、逐个平台，发真实请求实测。
 // 不看 IP 库猜地区，结果就是「分流后对方真正看到什么」。
@@ -15,7 +15,10 @@
 //   Prime Video 首页 currentTerritory
 //   Spotify     注册接口 spclient 的 country 字段
 //   HBO Max     首页 languageVariables 里的 country
-//   Hulu        首页可达即 US
+//               （max.com 对未开通地区一律下发默认 en/us，
+//                 必须和落地 IP 交叉校验，否则非美线全误报 US）
+//   Hulu        首页可达 + 落地 IP 是 US 才算 US
+//               （hulu.com 对海外 IP 也回完整营销页，页面本身没有信号）
 //   Abema       __CLIENT_REGION__.isoCountryCode
 //   巴哈动画疯  ajax 接口状态码 200/403
 //   B站港澳台   x/web-interface/zone 的落地国家
@@ -314,21 +317,46 @@ function checkSpotify(pol, cb) {
   });
 }
 
+// HBO Max：首页 languageVariables 只对「已开通地区」可信，
+// 未开通地区（含台湾/新加坡/日本等）一律默认下发 en/us —— 拿它直接判定，
+// 非美线会清一色误报 🇺🇸。所以必须拿落地 IP 交叉校验：
+//   落地 US + 页面 us = 真美区
+//   落地非 US + 页面 us = 美区默认兜底页，按落地地区报「地区限制」
+//   落地非 US + 页面给出其它开通地区（如 JP）= 按页面算
 function checkHBO(pol, cb) {
   get(pol, 'https://www.max.com/', 8, 1, function (e, r, s) {
     if (e || !s) return regionBlocked(pol, cb);
     var m = /"languageVariables":\{"lang":"([a-z]{2})","country":"([a-z]{2})"/.exec(s);
-    if (m) return cb({ s: 'ok', cc: m[2].toUpperCase() });
-    if (/not available in your (country|region)/i.test(s)) return cb({ s: 'no', r: R_GEO });
-    cb({ s: 'warn', r: R_DOWN });
+    if (!m) {
+      if (/not available in your (country|region)/i.test(s)) return regionBlocked(pol, cb);
+      return cb({ s: 'warn', r: R_DOWN });
+    }
+    var page = m[2].toUpperCase();
+    // 页面地区就是落地地区（含 US 线），可信
+    geoCC(pol, function (geo) {
+      if (!geo) return cb({ s: 'ok', cc: page });      // 反查失败，按页面算
+      if (page === geo) return cb({ s: 'ok', cc: page });
+      if (page === 'US') {
+        // 美区默认兜底页：本地区没开通
+        cb({ s: 'no', r: R_GEO, cc: geo });
+      } else {
+        cb({ s: 'ok', cc: page });                      // 其它开通地区按页面算
+      }
+    });
   });
 }
 
+// Hulu：只有美国本土有服务。hulu.com 对海外 IP 也返回 2MB 完整营销页、
+// 没有任何拦截文案，「首页可达即 US」会让所有线都显示 🇺🇸。
+// 改为：落地 IP 在美国才算解锁，否则直接按落地地区报「地区限制」。
 function checkHulu(pol, cb) {
   get(pol, 'https://www.hulu.com/', 9, 1, function (e, r, s) {
     if (e || !s) return regionBlocked(pol, cb);
-    if (/not available in your (country|region)/i.test(s)) return cb({ s: 'no', r: R_GEO });
-    cb({ s: 'ok', cc: 'US' });
+    geoCC(pol, function (geo) {
+      if (!geo) return cb({ s: 'warn', r: R_DOWN });
+      if (geo === 'US') return cb({ s: 'ok', cc: 'US' });
+      cb({ s: 'no', r: R_GEO, cc: geo });
+    });
   });
 }
 

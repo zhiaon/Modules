@@ -1,5 +1,5 @@
 #!name=流媒体解锁
-#!desc=V1.1 逐平台实测解锁状态：Netflix、Disney+、YouTube、Prime Video、Spotify、HBO Max、Hulu、Paramount+、Peacock、Viu、Abema、巴哈动画疯、B站港澳台，以及 ChatGPT / Claude / Gemini 三家人工智能服务。每个策略组一块，发真实请求看对方真正看到的地区，不靠 IP 库猜。
+#!desc=V1.2 逐平台实测解锁状态：Netflix、Disney+、YouTube、Prime Video、Spotify、HBO Max、Hulu、Paramount+、Peacock、Viu、Abema、巴哈动画疯、B站港澳台，以及 ChatGPT / Claude / Gemini 三家人工智能服务。每个策略组一块，发真实请求看对方真正看到的地区，不靠 IP 库猜。
 #!author=许舟
 #!category=网络
 #!icon=lock.open.fill
@@ -11,4 +11,4 @@
 流媒体解锁 = title="流媒体解锁",content="正在逐个平台实测…\n\n十六家平台各发一次真实请求，一般 3 秒出结果。\n点右上角的刷新按钮可以立即重测。",style=info,script-name=流媒体解锁,update-interval=1800
 
 [Script]
-流媒体解锁 = type=generic,script-path=https://raw.githubusercontent.com/zhiaon/Modules/main/surge_scripts/streaming-panel.js,argument="{{{策略组}}}||{{{平台}}}",timeout=120
+流媒体解锁 = type=generic,script-path=https://raw.githubusercontent.com/zhiaon/Modules/main/surge_scripts/streaming-panel.js,script-update-interval=86400,argument="{{{策略组}}}||{{{平台}}}",timeout=120
