@@ -1,0 +1,58 @@
+#!name=DNS Lite
+#!desc=V1.0 国内/国外双 DNS 智能分流 + 广告与追踪域名拦截。国内域名走国内 DNS，其余走国外加密 DNS。
+#!author=许舟
+#!category=网络
+#!icon=network
+#!arguments=国内DNS:223.5.5.5,国外DNS:https://cloudflare-dns.com/dns-query,广告拦截:REJECT,白名单1:wl-1.invalid,白名单2:wl-2.invalid,白名单3:wl-3.invalid
+#!arguments-desc=【国内DNS】\n国内域名要用的解析地址。\n· 阿里 223.5.5.5\n· 腾讯 119.29.29.29\n· 阿里 DoH https://dns.alidns.com/dns-query\n· 腾讯 DoH https://doh.pub/dns-query\n填 IP 或加密地址都行。\n\n【国外DNS】\n其余所有域名要用的解析地址，即除了下面国内名单以外的全部域名。\n这一项走 Surge 的 encrypted-dns-server，只接受加密地址，填裸 IP 不生效：\n· Cloudflare https://cloudflare-dns.com/dns-query\n· Google https://dns.google/dns-query\n· Quad9 https://dns.quad9.net/dns-query\n· DoT 例 tls://1.1.1.1\n· DoH3 例 h3://dns.google/dns-query\n\n【广告拦截】\nREJECT = 开启，返回空应答（默认）\nREJECT-DROP = 更彻底，直接丢包不回应\nDIRECT = 不拦截（规则保留但放行）\n\n【白名单1/2/3】\n不想被拦截的域名，后缀匹配。填 example.com 会连带放行 a.example.com。\n最多三条。用不到的保持默认 wl-1.invalid 这类无效值，不要清空——清空会导致整条规则被丢弃。
+
+[General]
+# 国外 DNS 作为全局默认：所有没被下面 [Host] 命中的域名都走这里
+encrypted-dns-server = {{{国外DNS}}}
+encrypted-dns-follow-outbound-mode = true
+
+[Host]
+# ── 国内 DNS 覆盖段 ───────────────────────────────────────────────
+# Surge 的 [Host] 从上到下求值，命中即返回，不会再看后面的行。
+# 因此这里必须先放「权威应答」，再放「国内 DNS 名单」，顺序不能反。
+#
+# ① 先让其它模块的 DNS 兜底生效（127.0.0.1 / 指定 IP 这类）
+#    这些行与红果去广告等模块的 Host 条目同值，重复写一次只是保序。
+ads3-normal-lf.zijieapi.com = 127.0.0.1
+ads3-normal-hl.zijieapi.com = 127.0.0.1
+ads3-normal-lq.zijieapi.com = 127.0.0.1
+ads5-normal-lf.zijieapi.com = 127.0.0.1
+ads5-normal-hl.zijieapi.com = 127.0.0.1
+ads5-normal-lq.zijieapi.com = 127.0.0.1
+webcast-open.douyin.com = 127.0.0.1
+content-open.douyin.com = 127.0.0.1
+zlink.ugsdk.cn = 127.0.0.1
+praisewindow.ugsdk.cn = 127.0.0.1
+dig.bdurl.net = 127.0.0.1
+activity-ag.awemeughun.com = 127.0.0.1
+
+# ② 国内域名 → 国内 DNS
+#    .cn 与 .中国 先兜住整个国家顶级域
+*.cn = server:{{{国内DNS}}}
+*.xn--fiqs8s = server:{{{国内DNS}}}
+#    再用 ChinaMax 国内域名表覆盖其余（110427 条，纯域名 DOMAIN-SET 格式）
+DOMAIN-SET:https://cdn.jsdelivr.net/gh/blackmatrix7/ios_rule_script@master/rule/Surge/ChinaMax/ChinaMax_Domain.list = server:{{{国内DNS}}}
+
+[Rule]
+# ── 广告白名单 ────────────────────────────────────────────────────
+# 必须排在拦截规则之前：Surge 规则从上到下求值，命中即停。
+DOMAIN-SUFFIX,{{{白名单1}}},DIRECT
+DOMAIN-SUFFIX,{{{白名单2}}},DIRECT
+DOMAIN-SUFFIX,{{{白名单3}}},DIRECT
+
+# ── 公共表缺口补充 ────────────────────────────────────────────────
+# 两张公共表实测都缺这几条，单独补上，否则这几个域漏拦。
+DOMAIN-SUFFIX,doubleclick.net,{{{广告拦截}}}
+DOMAIN-SUFFIX,googleadservices.com,{{{广告拦截}}}
+DOMAIN-SUFFIX,appsflyer.com,{{{广告拦截}}}
+DOMAIN-SUFFIX,umeng.com,{{{广告拦截}}}
+
+# ── 广告域名表（290392 条）───────────────────────────────────────
+DOMAIN-SET,https://cdn.jsdelivr.net/gh/blackmatrix7/ios_rule_script@master/rule/Surge/Advertising/Advertising_Domain.list,{{{广告拦截}}}
+# ── 追踪器域名表（39916 条）──────────────────────────────────────
+DOMAIN-SET,https://cdn.jsdelivr.net/gh/blackmatrix7/ios_rule_script@master/rule/Surge/Privacy/Privacy_Domain.list,{{{广告拦截}}}
