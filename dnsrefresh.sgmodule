@@ -1,0 +1,11 @@
+#!name=DNS Cache Refresh
+#!desc=V1.0 一键刷新 Surge DNS 缓存。卡片显示缓存条目数与上次刷新时间，点刷新按钮才执行 POST /v1/dns/flush，随后回读缓存条数核对，成功/未生效/失败都如实显示，不伪造状态。
+#!author=许舟
+#!category=网络
+#!icon=arrow.triangle.2.circlepath
+
+[Panel]
+DNSCacheRefresh = title="DNS Cache Refresh",content="缓存条目: -\n本地映射: -\n上次刷新: -\n点右上角 ⟳ 执行刷新",style=info,script-name=DNSCacheRefresh,update-interval=30
+
+[Script]
+DNSCacheRefresh = type=generic,script-path=https://raw.githubusercontent.com/zhiaon/Modules/main/surge_scripts/dns-refresh.js,script-update-interval=86400,timeout=20
