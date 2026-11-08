@@ -17,7 +17,7 @@
  */
 
 (function () {
-    var PANEL_TITLE   = "DNS Cache Refresh";
+    var PANEL_TITLE   = "DNS 清理缓存";
     var COOLDOWN_SEC  = 5;                    // 两次手动刷新的最小间隔，防连点刷爆
     var KEY_TS        = "dnsRefresh.lastTs";  // 上次刷新时间戳（毫秒）
     var KEY_TXT       = "dnsRefresh.lastText";// 上次刷新结果摘要
