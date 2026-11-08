@@ -1,0 +1,20 @@
+# Cloudflare Pages 响应头配置
+# 目的：让 Surge / 浏览器正确识别 .sgmodule 与 .js，并给出合理的缓存策略。
+
+/*
+  Access-Control-Allow-Origin: *
+  X-Content-Type-Options: nosniff
+
+# 模块文件：纯文本，短缓存 + 允许过期后先给旧再更新
+/*.sgmodule
+  Content-Type: text/plain; charset=utf-8
+  Cache-Control: public, max-age=300, stale-while-revalidate=3600, stale-if-error=3600
+
+# 脚本文件：JS MIME，同上
+/surge_scripts/*.js
+  Content-Type: application/javascript; charset=utf-8
+  Cache-Control: public, max-age=300, stale-while-revalidate=3600, stale-if-error=3600
+
+# 根目录说明页不缓存
+/index.html
+  Cache-Control: public, max-age=60

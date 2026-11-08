@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="zh-Hans">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>zhiaon / Modules — Surge 模块订阅源</title>
+<style>
+  :root { color-scheme: light dark; }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 28px 20px 60px;
+    font: 16px/1.6 -apple-system, "SF Pro Text", "PingFang SC", sans-serif;
+    background: #f2f2f7; color: #1c1c1e;
+  }
+  @media (prefers-color-scheme: dark) {
+    body { background: #000; color: #f2f2f7; }
+    .card { background: #1c1c1e !important; }
+    code { background: #2c2c2e !important; }
+    a { color: #0a84ff; }
+  }
+  .wrap { max-width: 720px; margin: 0 auto; }
+  h1 { font-size: 24px; margin: 0 0 6px; letter-spacing: -.3px; }
+  .sub { color: #8e8e93; font-size: 14px; margin-bottom: 24px; }
+  .card {
+    background: #fff; border-radius: 14px; padding: 18px 20px;
+    margin-bottom: 14px; box-shadow: 0 1px 3px rgba(0,0,0,.06);
+  }
+  h2 { font-size: 16px; margin: 0 0 12px; font-weight: 600; }
+  ul { margin: 0; padding: 0; list-style: none; }
+  li { padding: 9px 0; border-top: 1px solid rgba(142,142,147,.18); }
+  li:first-child { border-top: none; }
+  .n { font-weight: 600; }
+  .d { color: #8e8e93; font-size: 13px; margin-left: 8px; }
+  a { color: #007aff; text-decoration: none; word-break: break-all; }
+  a:hover { text-decoration: underline; }
+  code {
+    display: block; background: #f2f2f7; border-radius: 8px;
+    padding: 10px 12px; margin-top: 8px;
+    font: 12px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace;
+    word-break: break-all; color: #3c3c43;
+  }
+  .tip { font-size: 13px; color: #8e8e93; margin-top: 10px; }
+  .badge {
+    display: inline-block; font-size: 11px; font-weight: 600;
+    background: #34c759; color: #fff; border-radius: 5px;
+    padding: 2px 7px; margin-left: 6px; vertical-align: 1px;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<h1>zhiaon / Modules</h1>
+<div class="sub">Surge 模块订阅源 · 由 Cloudflare Pages 直连 GitHub 仓库自动发布</div>
+
+<div class="card">
+  <h2>模块列表</h2>
+  <ul id="list">
+    <li><span class="n">机场流量</span><span class="d">订阅链接流量查询，最多六家</span></li>
+    <li><span class="n">流媒体解锁</span><span class="d">十六家平台逐一实测落地地区</span></li>
+    <li><span class="n">网络IP信息</span><span class="d">本机 / 入口 / 落地三条链路</span></li>
+    <li><span class="n">番茄小说去广告</span><span class="d">阅读页广告三件套清理</span></li>
+    <li><span class="n">七猫小说去广告</span><span class="d">章节间大卡片与横幅</span></li>
+    <li><span class="n">红果短剧去广告</span><span class="d">短剧信息流广告</span></li>
+    <li><span class="n">DNS Lite</span><span class="d">加密 DNS 与分流解析</span></li>
+    <li><span class="n">DNS 清理缓存</span><span class="d">面板一键刷新 Surge DNS 缓存</span></li>
+  </ul>
+  <div class="tip">长按上方任意一行可复制，或直接点模块名查看原始文件。</div>
+</div>
+
+<div class="card">
+  <h2>怎么装</h2>
+  <div>Surge → 模块 → 安装新模块 → 粘贴下面的地址。</div>
+  <code id="sample">https://raw.zhiaon.top/jichang.sgmodule</code>
+  <div class="tip">把 <b>jichang</b> 换成上表里对应的文件名即可。脚本随模块自动下载，无需单独添加。</div>
+</div>
+
+<div class="card">
+  <h2>这个站是干什么的</h2>
+  <div>直连 GitHub 仓库 <a href="https://github.com/zhiaon/Modules">zhiaon/Modules</a>，每次 push 自动同步。</div>
+  <div class="tip">比 raw.githubusercontent.com 在国内更快、更稳，文件内容完全一致，没有二次加工。</div>
+</div>
+
+</div>
+<script>
+// 从仓库实际存在的文件生成列表，避免手写清单与仓库不同步
+(async function () {
+  const files = [
+    ['jichang.sgmodule',   '机场流量',          '订阅链接流量查询，最多六家'],
+    ['streaming.sgmodule', '流媒体解锁',        '十六家平台逐一实测落地地区'],
+    ['ipinfo.sgmodule',    '网络IP信息',        '本机 / 入口 / 落地三条链路'],
+    ['fanqie.sgmodule',    '番茄小说去广告',    '阅读页广告三件套清理'],
+    ['qimao.sgmodule',     '七猫小说去广告',    '章节间大卡片与横幅'],
+    ['hongguo.sgmodule',   '红果短剧去广告',    '短剧信息流广告'],
+    ['dnslite.sgmodule',   'DNS Lite',          '加密 DNS 与分流解析'],
+    ['dnsrefresh.sgmodule','DNS 清理缓存',      '面板一键刷新 Surge DNS 缓存'],
+  ];
+  const ul = document.getElementById('list');
+  ul.innerHTML = '';
+  files.forEach(function (f) {
+    const li = document.createElement('li');
+    const a = document.createElement('a');
+    a.href = '/' + f[0];
+    a.textContent = f[1];
+    a.className = 'n';
+    const d = document.createElement('span');
+    d.className = 'd';
+    d.textContent = f[2];
+    li.appendChild(a);
+    li.appendChild(d);
+    ul.appendChild(li);
+  });
+})();
+</script>
+</body>
+</html>
