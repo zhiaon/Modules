@@ -1,5 +1,5 @@
 #!name=番茄小说去广告
-#!desc=V1.23：摘除失效的 [Script] 段（番茄证书固定，fanqie_clean.js 永远跑不起来，纯占位误导）；V1.22 基础：撤回 pddpic 拦截（会误伤拼多多App图片），活动卡改靠接口断供，仅做 SNI/域名层拦截
+#!desc=V1.24：新增 lf-fe*.fqnovelstatic.com 拦截 —— 实测「番茄送你惊喜电商券」运营弹窗弹出瞬间拉 1.1 MB 活动页前端包；V1.23 基础：摘除失效的 [Script] 段（番茄证书固定，fanqie_clean.js 永远跑不起来，纯占位误导）；V1.22 基础：撤回 pddpic 拦截（会误伤拼多多App图片），活动卡改靠接口断供，仅做 SNI/域名层拦截
 #!author=许舟
 
 [Rule]
@@ -120,6 +120,11 @@ DOMAIN-SUFFIX,ecombdapi.com,REJECT,extended-matching
 DOMAIN-SUFFIX,ecombdstatic.com,REJECT,extended-matching
 DOMAIN-SUFFIX,yingt.fun,REJECT,extended-matching
 DOMAIN-SUFFIX,ndcpp.com,REJECT,extended-matching
+# ===== V1.24 阅读页「番茄送你惊喜电商券」运营弹窗 =====
+# 实测弹窗弹出那一刻拉了一次 lf-fe.fqnovelstatic.com 共 1.1 MB（该域本月总量才 336 KB），
+# 是其 H5 活动页前端资源包；fe = frontend，同族还有 lf-fe2 / lf-fe-lq。
+# 该域平时几乎不承载正文资源（正文图走 fqnovelpic / byteimg），拦这族风险低。
+DOMAIN-WILDCARD,lf-fe*.fqnovelstatic.com,REJECT,pre-matching,extended-matching
 USER-AGENT,ttplayer*,REJECT
 
 [URL Rewrite]
