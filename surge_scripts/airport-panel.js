@@ -1,5 +1,5 @@
 // ============================================================
-// 机场流量面板 · Surge 通用版  V1.0
+// 机场流量面板 · Surge 通用版  V1.1
 // 数据源：订阅链接响应头 subscription-userinfo（V2board / SSPanel / 新V2 通用）
 //
 // 参数：一个机场一组三格（机场名 / 订阅链接 / 重置日），共 6 组
@@ -68,12 +68,9 @@ for (var gi = 0; gi < 6; gi++) {
   });
 }
 
-// 公共重置日：第一个填了的值，都没有就 1
-var FALLBACK_DAY = 1;
-for (var fi = 0; fi < AIRPORTS.length; fi++) {
-  if (AIRPORTS[fi].day) { FALLBACK_DAY = AIRPORTS[fi].day; break; }
-}
-AIRPORTS.forEach(function (a) { if (!a.day) a.day = FALLBACK_DAY; });
+// 重置日：只认用户自己填的，没填就是 null，面板上不显示任何重置信息。
+// 不做「回退到第一个填了的机场」也不补默认 1 号 —— 有些机场是包月不限或
+// 一次性流量包，根本没有重置日，凭空补一个日期是编造。
 
 var UA = 'Clash/1.18.0';
 
@@ -224,9 +221,12 @@ function blockFull(d, day, stale) {
 
   L.push('\u2191 ' + fmtB(up) + '   \u2193 ' + fmtB(down));
 
-  var r = resetInfo(day);
-  L.push('\u91cd\u7f6e  \u6bcf\u6708 ' + day + ' \u53f7 \u00b7 ' + md(r.date) +
-    (r.days === 0 ? '\uff08\u4eca\u5929\uff09' : '\uff08' + r.days + ' \u5929\u540e\uff09'));
+  // 只有在用户填了重置日时才显示这一行；没填就整行不出现
+  if (day) {
+    var r = resetInfo(day);
+    L.push('\u91cd\u7f6e  \u6bcf\u6708 ' + day + ' \u53f7 \u00b7 ' + md(r.date) +
+      (r.days === 0 ? '\uff08\u4eca\u5929\uff09' : '\uff08' + r.days + ' \u5929\u540e\uff09'));
+  }
 
   var exp = expireOf(d.expire);
   if (exp) {
@@ -260,8 +260,13 @@ function blockTight(d, name, day, stale) {
     L.push('\u5df2\u7528 ' + fmtS(used) + '  \u4e0d\u9650');
   }
 
-  var r = resetInfo(day);
-  L.push('\u2191' + fmtS(up) + '  \u2193' + fmtS(down) + '  ' + md(r.date) + ' \u91cd\u7f6e\u00b7' + day + '\u53f7');
+  // 上行/下行一行照旧；重置日只有填了才追加到行尾
+  var tail = '';
+  if (day) {
+    var r = resetInfo(day);
+    tail = '  ' + md(r.date) + ' \u91cd\u7f6e\u00b7' + day + '\u53f7';
+  }
+  L.push('\u2191' + fmtS(up) + '  \u2193' + fmtS(down) + tail);
 
   var exp = expireOf(d.expire);
   if (exp) L.push('\u5230\u671f ' + ymd(exp) + ' \u00b7 ' + daysTo(exp) + ' \u5929');
@@ -297,7 +302,7 @@ function render(items) {
     if (!it.info) {
       L.push('\u2708\ufe0f ' + it.name);
       L.push('\u26a0\ufe0f \u83b7\u53d6\u5931\u8d25' + (it.err ? '\uff1a' + it.err : '') +
-        '  \u00b7\u6bcf\u6708' + it.day + '\u53f7\u91cd\u7f6e');
+        (it.day ? '  \u00b7\u6bcf\u6708' + it.day + '\u53f7\u91cd\u7f6e' : ''));
       return;
     }
     L = L.concat(multi ? blockTight(it.info, it.name, it.day, it.stale)
