@@ -1,0 +1,20 @@
+#!name=iKuuu 每日签到
+#!desc=V1.1 自动签到 ikuuu.org / ikuuu.pw / ikuuu.me：可开关的 Cookie 自动抓取、每日定时签到 + 面板刷新按钮手动签到，通知里只报服务器原文与剩余流量。移植自 Yjwj205/loon-modules 的 Loon 插件。
+#!author=Yjwj205 / 许舟（Surge 移植）
+#!category=工具
+#!icon=calendar.badge.checkmark
+#!homepage=https://github.com/Yjwj205/loon-modules
+#!date=2026-11-11
+#!arguments=cookie:-,capture:true,notify:true,cron:0 8 * * *,enabled:true,node:-,site:auto
+#!arguments-desc=【开关怎么写】\n开 = true，关 = false。\n也认 0 / off / no / 关 / 关闭，大小写随意。\n写错成别的字样一律按「关」以外处理，所以只用 true 和 false 最稳。\n\n【Cookie】\n手动粘贴登录 Cookie。\n填 - 表示留空，此时使用「抓取 Cookie」自动保存的那份。\n粘整行 "Cookie: xxx" 也能识别，会去掉前缀。\n\n【抓取 Cookie】\n开（true）：在 Safari 打开 ikuuu.org / ikuuu.pw / ikuuu.me 任一处登录一次，模块自动把登录 Cookie 和域名一起存下来。\n关（false）：只是不再写入，已保存的 Cookie 照样能用。\n拿到 Cookie 之后就可以写 false 关掉，省得每次开站点都跑一遍脚本。\n\n【签到通知】\n开（true）弹系统通知，关（false）静默。关掉只是不弹窗，签到照跑。\n\n【签到时间】\n5 段 cron 表达式：分 时 日 月 周。\n默认 0 8 * * * 就是每天 08:00。\n改成 30 7 * * * 就是每天 07:30。\n\n【定时签到】\n开（true）按上面的时间自动签到。\n关（false）不再自动签，只保留面板手动签到。\n\n【请求节点】\n可填策略组名或节点名，例如 Proxy、DIRECT、日本。\n填 - 表示留空，跟随规则。\n只有偶尔出现证书/TLS 报错时才需要固定到某个节点。\n\n【站点】\n填 auto：自动用抓 Cookie 时那个域名；没抓过就用 ikuuu.org。\n也可以直接写 ikuuu.org / ikuuu.pw / ikuuu.me 强制指定。\n\n【怎么手动签】\n策略选择页找到「iKuuu 签到」卡片，点右上角刷新按钮就是立即签到一次；\n卡片自己定时刷新时只显示上次结果，不会重复请求。
+
+[Panel]
+iKuuu 每日签到 = title="iKuuu 签到",content="还没有签到记录\n\n点右上角刷新按钮立即签到\n（自动刷新只显示上次结果）",style=info,script-name=iKuuu 每日签到,update-interval=1800
+
+[Script]
+iKuuu Cookie 抓取 = type=http-request,pattern=^https?:\/\/(?:[a-z0-9-]+\.)*ikuuu\.(?:org|pw|me)\/,script-path=https://raw.githubusercontent.com/zhiaon/Modules/main/surge_scripts/ikuuu-cookie.js,script-update-interval=86400,argument="{{{capture}}}|{{{notify}}}",timeout=10
+iKuuu 每日签到 = type=generic,script-path=https://raw.githubusercontent.com/zhiaon/Modules/main/surge_scripts/ikuuu-checkin.js,script-update-interval=86400,argument="{{{cookie}}}|{{{notify}}}|{{{node}}}|true|{{{site}}}",timeout=60
+iKuuu 定时签到 = type=cron,cronexp="{{{cron}}}",script-path=https://raw.githubusercontent.com/zhiaon/Modules/main/surge_scripts/ikuuu-checkin.js,script-update-interval=86400,argument="{{{cookie}}}|{{{notify}}}|{{{node}}}|{{{enabled}}}|{{{site}}}",timeout=60,wake-system=true
+
+[MITM]
+hostname = %APPEND% ikuuu.org, *.ikuuu.org, ikuuu.pw, *.ikuuu.pw, ikuuu.me, *.ikuuu.me
