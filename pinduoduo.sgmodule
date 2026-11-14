@@ -1,0 +1,18 @@
+#!name=拼多多去广告
+#!version=1.0
+#!desc=V1.0：基于拼多多 iOS 8.31.0 抓包；过滤首页明确标记的推广商品，开屏接口返回已观察到的空结果。未知结构和全广告页原样放行；已通过样本回放，App 界面效果尚待复测。
+#!author=许舟
+#!category=去广告
+#!tag=去广告
+#!homepage=https://github.com/zhiaon/Modules
+
+[Map Local]
+# 开屏接口：返回空结果，保持 App 正常逻辑
+^https://api\.pinduoduo\.com/api/cappuccino/splash(?:\?|$) data-type=base64 data="eyJzaXplIjowfQ==" status-code=200 header="Content-Type:application/json"
+
+[Script]
+# 只处理首页商品流；不拦图床、搜索、红包、支付和埋点
+PDD首页推广过滤 = type=http-response,pattern=^https://api\.pinduoduo\.com/api/alexa/cells/hub/v3(?:\?|$),requires-body=true,max-size=1048576,timeout=10,script-path=https://raw.githubusercontent.com/zhiaon/Modules/main/surge_scripts/pinduoduo-clean.js,script-update-interval=86400
+
+[MITM]
+hostname = %APPEND% api.pinduoduo.com
