@@ -1,0 +1,12 @@
+#!name=Surge 运行监控
+#!desc=V1.2 单张卡片显示 Surge 运行时长、启动时间、配置重载、真实物理内存、采样峰值/最低值和活动连接。自动刷新只监控，20 秒内连续点两次右上角刷新才重启引擎；重启会断开连接并清空缓存和临时规则。需 Surge iOS 6+ 且 http-api-mcp=true。
+#!author=许舟
+#!category=网络
+
+[Panel]
+Surge 运行监控 = title="Surge 运行监控",content="正在读取运行时长与内存…\n\n自动刷新只监控。\n手动重启：20 秒内连续点两次右上角刷新。",style=info,script-name=Surge 运行监控,update-interval=60
+
+[Script]
+Surge 运行时长-记录启动 = type=event,event-name=engine-started,script-path=https://raw.githubusercontent.com/zhiaon/Modules/main/surge_scripts/surge-runtime-panel.js,script-update-interval=86400,argument=record,timeout=10
+Surge 运行时长-记录重载 = type=event,event-name=profile-reloaded,script-path=https://raw.githubusercontent.com/zhiaon/Modules/main/surge_scripts/surge-runtime-panel.js,script-update-interval=86400,argument=record,timeout=10
+Surge 运行监控 = type=generic,script-path=https://raw.githubusercontent.com/zhiaon/Modules/main/surge_scripts/surge-runtime-panel.js,script-update-interval=86400,timeout=15
