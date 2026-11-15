@@ -1,0 +1,14 @@
+#!name=双出口 IP 面板
+#!author=许舟
+#!version=1.1.0
+#!desc=V1.1 详细双出口面板：IP、IPv4/IPv6、国家/省市、运营商/组织、ASN、时区、查询来源、每路耗时与更新时间；点右上角刷新立即查询。
+#!category=网络
+#!system=ios
+#!arguments=policy:Proxy
+#!arguments-desc=policy：填现有代理策略组或节点的完整名称，默认 Proxy。面板跟随该策略查询，不改变选择。进入策略页且距上次更新超过 600 秒时自动刷新，点面板右上角刷新可立即重查。脚本自动从 GitHub 获取，无需手动安装。地区为 IP 数据库标注，查询耗时不是节点 Ping。
+
+[Panel]
+双出口 IP 面板 = title="双出口 IP · 详细",content="DIRECT 与代理出口等待查询…\n点右上角刷新按钮查询",style=info,script-name=双出口 IP 查询,update-interval=600
+
+[Script]
+双出口 IP 查询 = type=generic,script-path=https://raw.githubusercontent.com/zhiaon/Modules/main/surge_scripts/dual-ip-panel.js,script-update-interval=86400,argument="{{{policy}}}",timeout=15,engine=jsc
