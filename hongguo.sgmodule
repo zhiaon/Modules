@@ -1,5 +1,5 @@
 #!name=红果短剧去广告
-#!desc=V1.0 纯域名层去广告：穿山甲/Pangle 广告 SDK 全族、红果广告视频子域 v*-reading-ad、广告素材签名（-ad-sign / mgsd-sign / luckycat）、广告位调度 TNC、小游戏与电商推广位、埋点上报、直播带货卡片信令。正片 CDN 与图床全部前置放行，不需要 MITM 与证书。
+#!desc=V1.1 移除 p*-webcast-sign.douyinpic.com 拦截，避免误伤抖音评论头像；纯域名层去广告：穿山甲/Pangle 广告 SDK 全族、红果广告视频子域 v*-reading-ad、广告素材签名（-ad-sign / mgsd-sign / luckycat）、广告位调度 TNC、小游戏与电商推广位、埋点上报、直播带货卡片信令。正片 CDN 与图床全部前置放行，不需要 MITM 与证书。
 #!author=许舟
 #!category=去广告
 #!icon=https://is1-ssl.mzstatic.com/image/thumb/Purple221/v4/df/05/06/df050609-8be3-0daf-d35b-f29a143d0677/AppIcon-0-0-1x_U007emarketing-0-8-0-85-220.png/120x120bb.jpg
@@ -32,8 +32,7 @@ DOMAIN-WILDCARD,p*-mgsdk-sign.byteimg.com,REJECT,extended-matching,pre-matching
 # 小游戏 / 广告素材平台（实测单次拉数 MB）
 DOMAIN-WILDCARD,p*-luckycat*.byteimg.com,REJECT,extended-matching,pre-matching
 DOMAIN-WILDCARD,p*-developer-sign.bytemaimg.com,REJECT,extended-matching,pre-matching
-# 直播带货卡片的封面签名图（图床域里的广告子域）
-DOMAIN-WILDCARD,p*-webcast-sign.douyinpic.com,REJECT,extended-matching,pre-matching
+# 抖音图片由主配置放行，避免误伤评论头像。
 
 # ============ ② 正片与功能保护（DIRECT 不支持 pre-matching）============
 DOMAIN-SUFFIX,qznovelvod.com,DIRECT,extended-matching
