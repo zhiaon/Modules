@@ -1,0 +1,13 @@
+#!name=今日入账
+#!desc=V1.3：采用分组留白排版；详细显示今日收入、预计总额、计薪工时、工作进度、两段用餐休息与下班倒计时，以及本月累计与含本班合计。纯本地计算，每60秒刷新。
+#!author=许舟
+#!version=1.3
+#!category=工具
+#!arguments=上班时间:-,午饭加休息开始:-,午饭加休息结束:-,晚饭加休息开始:-,晚饭加休息结束:-,下班时间:-,本月休息日:-,自定义记录:-,每小时工资:-
+#!arguments-desc=所有参数不预填实际值，- 仅表示未填写。\n必填：上班时间、下班时间、每小时工资。未填齐时只显示待配置，不计算收入。时间使用24小时制，支持跨夜。\n午饭加休息开始 / 结束：选填，两项都不填表示没有这段休息；填写时须成对。\n晚饭加休息开始 / 结束：选填，两项都不填表示没有晚饭休息，直接工作至下班时间；填写时须成对。\n两段休息只扣班内部分；重叠时间只扣一次。休息期间暂停计薪。\n本月休息日：选填日期号，分号分隔，每月更新；不自动排除周末。\n自定义记录：选填，格式为日期号:小时:金额，多条用分号分隔，优先于休息日和实时估算。\n本月累计不含当前工作日，另显示包含本班的当前合计。历史按设置估算。
+
+[Panel]
+今日入账 = script-name=salary-widget-remote,update-interval=60
+
+[Script]
+salary-widget-remote = type=generic,script-path=https://raw.githubusercontent.com/zhiaon/Modules/main/surge_scripts/salary-widget-panel.js,script-update-interval=86400,timeout=10,argument="WORK_START={{{上班时间}}}|LUNCH_START={{{午饭加休息开始}}}|LUNCH_END={{{午饭加休息结束}}}|DINNER_START={{{晚饭加休息开始}}}|DINNER_END={{{晚饭加休息结束}}}|WORK_END={{{下班时间}}}|REST_DAYS={{{本月休息日}}}|CUSTOM_DAYS={{{自定义记录}}}|HOURLY_WAGE={{{每小时工资}}}"
