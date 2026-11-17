@@ -1,0 +1,137 @@
+name: "iKuuu 每日签到"
+description: "自动抓取登录 Cookie，每日定时签到，并用小组件展示剩余流量、到期天数与签到状态。移植自 Surge 版 V1.2。"
+author: "Yjwj205 / 许舟（Egern 移植）"
+homepage: "https://github.com/Yjwj205/loon-modules"
+icon: "calendar.badge.checkmark"
+
+compat_arguments:
+  COOKIE: "-"
+  CAPTURE: "true"
+  NOTIFY: "true"
+  CRON: "0 8 * * *"
+  ENABLE: "true"
+  NODE: "-"
+  SITE: "auto"
+  REFRESH: "30"
+
+compat_arguments_desc: |
+  【开关怎么写】
+  开 = true，关 = false。也认 0 / off / no / 关 / 关闭，大小写随意。
+
+  【COOKIE】
+  手动粘贴登录 Cookie。
+  填 - 表示留空，此时使用「CAPTURE 自动抓取」保存的那份。
+  粘整行 "Cookie: xxx" 也能识别，会自动去掉前缀。
+
+  【CAPTURE】
+  开（true）：在 Safari 打开 ikuuu.org / ikuuu.pw / ikuuu.me 任一处登录一次，模块自动保存登录 Cookie 和域名。
+  关（false）：只是不再写入，已保存的 Cookie 照样能用。
+
+  【NOTIFY】
+  开（true）签到结果弹系统通知，关（false）静默。关掉只是不弹窗，签到照跑。
+
+  【CRON】
+  5 段 cron：分 时 日 月 周。默认 0 8 * * * 即每天 08:00。
+  改成 30 7 * * * 就是每天 07:30。
+
+  【ENABLE】
+  开（true）按 CRON 自动签到；关（false）停止自动签到（小组件仍显示上次结果）。
+
+  【NODE】
+  可填策略组名或节点名，例如 Proxy、DIRECT、日本。
+  填 - 表示跟随规则。只有偶尔出现证书/TLS 报错时才需要固定节点。
+
+  【SITE】
+  填 auto：用抓 Cookie 时那个域名；没抓过就用 ikuuu.org。
+  也可以直接写 ikuuu.org / ikuuu.pw / ikuuu.me 强制指定。
+
+  【REFRESH】
+  小组件打开时，缓存超过多少分钟才去站点刷新流量。
+  默认 30；填 0 表示只读缓存，不产生任何请求。
+
+env_schema:
+  COOKIE:
+    name: 登录 Cookie
+    description: 留空则使用自动抓取的那份。可留空。
+    default_value: "-"
+  CAPTURE:
+    name: 自动抓取 Cookie
+    options:
+      - "true"
+      - "false"
+  NOTIFY:
+    name: 签到通知
+    options:
+      - "true"
+      - "false"
+  ENABLE:
+    name: 定时签到
+    options:
+      - "true"
+      - "false"
+  CRON:
+    name: 签到时间
+    description: 5 段 cron，默认每天 08:00
+    default_value: "0 8 * * *"
+  NODE:
+    name: 请求节点
+    description: 留空跟随规则；出现 TLS 报错时可指定 Proxy / DIRECT
+    default_value: "-"
+  SITE:
+    name: 站点
+    description: auto 表示跟随抓 Cookie 时的域名
+    options:
+      - auto
+      - ikuuu.org
+      - ikuuu.pw
+      - ikuuu.me
+  REFRESH:
+    name: 小组件刷新间隔
+    description: 单位分钟；填 0 只读缓存不发请求
+    default_value: "30"
+
+scriptings:
+  - http_request:
+      name: "iKuuu Cookie 抓取"
+      match: "^https?://(?:[a-z0-9-]+\\.)*ikuuu\\.(?:org|pw|me)/"
+      script_url: "https://raw.githubusercontent.com/zhiaon/Modules/main/egern_scripts/ikuuu-cookie.js"
+      env:
+        CAPTURE: "{{{CAPTURE}}}"
+        NOTIFY: "{{{NOTIFY}}}"
+      timeout: 10
+      update_interval: 86400
+  - schedule:
+      name: "iKuuu 定时签到"
+      cron: "{{{CRON}}}"
+      script_url: "https://raw.githubusercontent.com/zhiaon/Modules/main/egern_scripts/ikuuu-checkin.js"
+      env:
+        COOKIE: "{{{COOKIE}}}"
+        NOTIFY: "{{{NOTIFY}}}"
+        ENABLE: "{{{ENABLE}}}"
+        NODE: "{{{NODE}}}"
+        SITE: "{{{SITE}}}"
+      timeout: 60
+      update_interval: 86400
+  - generic:
+      name: "iKuuu 小组件"
+      script_url: "https://raw.githubusercontent.com/zhiaon/Modules/main/egern_scripts/ikuuu-widget.js"
+      env:
+        COOKIE: "{{{COOKIE}}}"
+        SITE: "{{{SITE}}}"
+        CRON: "{{{CRON}}}"
+        REFRESH: "{{{REFRESH}}}"
+      timeout: 20
+      update_interval: 86400
+
+widgets:
+  - name: "iKuuu 签到"
+    script_name: "iKuuu 小组件"
+
+mitm:
+  hostnames:
+    - "ikuuu.org"
+    - "*.ikuuu.org"
+    - "ikuuu.pw"
+    - "*.ikuuu.pw"
+    - "ikuuu.me"
+    - "*.ikuuu.me"
