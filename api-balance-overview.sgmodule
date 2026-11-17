@@ -1,0 +1,14 @@
+#!name=API余额总览
+#!desc=V1.0：汇总 OpenAI/One API/New API 风格账户余额；支持低余额提醒和缓存展示。
+#!author=许舟
+#!version=1.0
+#!category=工具
+#!arguments=账户列表:-,通知:true,请求节点:-,低余额阈值:-
+#!arguments-desc=账户列表：格式为 名称~BaseURL~密钥~接口~倍率~货币；多个账户用英文分号分隔。例：中转站~https://api.example.com~sk-xxx~/api/user/self~100000~USD。\n接口默认 /api/user/self；倍率默认 100000，表示接口 quota 单位除以 100000 后显示为货币金额。若服务端返回的 balance 已经是金额，倍率填 1。\n通知：true 时，每 2 小时定时查询发现余额从阈值以上降到阈值以下时发送系统通知；面板刷新不发送通知。\n请求节点：可填策略组或节点名；留 - 表示跟随当前规则。\n低余额阈值：按账户货币填写；留 - 不发送低余额提醒。\n密钥只保存在 Surge 模块参数中，面板不会显示；首次成功只建立提醒基线。脚本只读查询，不会修改账户数据。
+
+[Panel]
+API余额总览 = title="API余额总览",content="尚未配置 API 账户\n\n打开模块 → 参数 → 账户列表\n格式：名称~BaseURL~密钥~接口~倍率~货币\n首次成功只建立余额基线",style=info,script-name=api-balance-panel,update-interval=7200
+
+[Script]
+api-balance-panel = type=generic,script-path=https://raw.githubusercontent.com/zhiaon/Modules/main/surge_scripts/api-balance-overview.js,script-update-interval=86400,argument="{{{账户列表}}}|{{{通知}}}|{{{请求节点}}}|{{{低余额阈值}}}",timeout=65,engine=webview
+api-balance-cron = type=cron,cronexp="0 */2 * * *",script-path=https://raw.githubusercontent.com/zhiaon/Modules/main/surge_scripts/api-balance-overview.js,script-update-interval=86400,argument="{{{账户列表}}}|{{{通知}}}|{{{请求节点}}}|{{{低余额阈值}}}",timeout=65,engine=webview,wake-system=true
