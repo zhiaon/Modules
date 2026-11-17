@@ -1,0 +1,14 @@
+#!name=版本更新雷达
+#!desc=V1.0：监测 GitHub 仓库 Release 更新；首次静默建立基线，后续新版本通知并在面板显示。
+#!author=许舟
+#!version=1.0
+#!category=工具
+#!arguments=仓库列表:-,测试版:false,通知:true,请求节点:-,GitHub令牌:-
+#!arguments-desc=仓库列表：填写 GitHub 仓库，格式 owner/repo；多个用英文分号分隔，也支持显示名=owner/repo。例：Surge=nschloe/Surge;GitHub CLI=cli/cli。\n测试版：false 只看稳定版；true 把预发布版本也纳入监测。\n通知：true 时，定时任务发现新版本会发系统通知；面板刷新不重复通知。\n请求节点：可填策略组或节点名；留 - 表示跟随当前规则。\nGitHub令牌：公开仓库留 - 即可；私有仓库或频繁查询时填写 GitHub Token。令牌只保存在 Surge 模块参数中，不写入脚本。\n首次运行只建立当前版本基线，之后出现新版本才通知。面板每 2 小时自动更新，右上角刷新可立即检查。
+
+[Panel]
+版本更新雷达 = title="版本更新雷达",content="尚未配置仓库\n\n打开模块 → 参数 → 仓库列表\n格式：owner/repo；owner/repo\n\n首次只记录版本，后续更新才通知",style=info,script-name=release-radar-panel,update-interval=7200
+
+[Script]
+release-radar-panel = type=generic,script-path=https://raw.githubusercontent.com/zhiaon/Modules/main/surge_scripts/release-radar.js,script-update-interval=86400,argument="{{{仓库列表}}}|{{{测试版}}}|{{{通知}}}|{{{请求节点}}}|{{{GitHub令牌}}}",timeout=80,engine=webview
+release-radar-cron = type=cron,cronexp="0 */2 * * *",script-path=https://raw.githubusercontent.com/zhiaon/Modules/main/surge_scripts/release-radar.js,script-update-interval=86400,argument="{{{仓库列表}}}|{{{测试版}}}|{{{通知}}}|{{{请求节点}}}|{{{GitHub令牌}}}",timeout=80,engine=webview,wake-system=true
