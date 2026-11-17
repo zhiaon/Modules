@@ -1,0 +1,14 @@
+#!name=App Store降价提醒
+#!desc=V1.0：监测指定应用在指定地区的 App Store 本体价格；首次静默建立基线，后续降价才通知。
+#!author=许舟
+#!version=1.0
+#!category=工具
+#!arguments=应用列表:-,默认地区:CN,通知:true,请求节点:-,降价阈值:0
+#!arguments-desc=应用列表：填写 App Store ID 或应用链接；多个应用用英文分号分隔。格式：名称=App Store ID@地区。例：ChatGPT=6448311069@US；Claude=6473753684@CN。地区不填时使用“默认地区”。\n默认地区：两位国家代码，例如 CN、US、TR、JP、HK。\n通知：true 时，每日定时检查发现降价后发送系统通知；面板刷新不发送通知。\n请求节点：可填策略组或节点名；留 - 表示跟随当前规则。\n降价阈值：价格至少下降多少才提醒，按该地区货币计算；填 0 表示任意降价。\n首次运行只记录当前价格，不会把当前价格误报成降价。仅监测应用本体售价，不含 App 内购或订阅套餐。
+
+[Panel]
+App Store降价提醒 = title="App Store降价提醒",content="尚未配置应用\n\n打开模块 → 参数 → 应用列表\n格式：名称=App Store ID@地区\n首次只记录价格，后续降价才通知",style=info,script-name=appstore-price-panel,update-interval=21600
+
+[Script]
+appstore-price-panel = type=generic,script-path=https://raw.githubusercontent.com/zhiaon/Modules/main/surge_scripts/appstore-price-alert.js,script-update-interval=86400,argument="{{{应用列表}}}|{{{默认地区}}}|{{{通知}}}|{{{请求节点}}}|{{{降价阈值}}}",timeout=60,engine=webview
+appstore-price-cron = type=cron,cronexp="0 9 * * *",script-path=https://raw.githubusercontent.com/zhiaon/Modules/main/surge_scripts/appstore-price-alert.js,script-update-interval=86400,argument="{{{应用列表}}}|{{{默认地区}}}|{{{通知}}}|{{{请求节点}}}|{{{降价阈值}}}",timeout=60,engine=webview,wake-system=true
