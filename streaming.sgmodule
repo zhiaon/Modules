@@ -6,7 +6,7 @@
 #!icon=lock.open.fill
 #!homepage=https://github.com/zhiaon/Modules
 #!arguments=策略组:填写策略组名,平台:填写要测的平台
-#!arguments-desc=【策略组】\n填要测的组名或节点名，多个用竖线 | 分隔。\n例：美国|日本|中国台湾|中国香港\n留空则只测 FINAL 那条兜底组。\n\n【平台】\n留空 = 十六个平台全测。\n只想看几个就用逗号分隔，例：netflix,disney,chatgpt\n\n可用简写：\nnetflix / nf / 网飞 / 奈飞\ndisney / 迪士尼\nyoutube / yt / 油管\nprime / 亚马逊\nspotify / sp / 声田\nhbo / max\nhulu / hu\nparamount / pm / 派拉蒙\npeacock / pc / 孔雀\nviu\nabema / ab\nbahamut / 巴哈 / 动画疯\nbili / b站 / 哔哩哔哩\nchatgpt / gpt / openai\nclaude / 克劳德\ngemini / 谷歌\nai = 上面三个 AI 一起测\n\n卡片怎么读：\n第一行是「策略组 → 当前选中节点」\n第二行是「解锁率 x/y 已解锁」\n每行格式：状态图标 → 结论 → 平台名 → 国旗，例如「✅ 已解锁　　 Netflix 🇸🇬」。\n图标、结论、平台名三列都从同一像素起步，任何机型、任何系统字号下都不会错位；只有最右边的国旗按名字长短自然参差。\n下面三块：影音平台、未解锁平台、AI 平台\n\n图标含义：\n✅ 已解锁，后面跟对方识别的国旗\n🟡 部分解锁，或没拿到明确信号\n❌ 未解锁，原因只有三种：地区限制 / 版权限制 / 服务不可用\n⚠️ 服务不可用：请求失败或超时，重刷一次\n\n全部平台都拿到明确结论时，卡片图标是绿色打开的锁；有请求失败则变成橙色警示三角。
+#!arguments-desc=【策略组】\n是什么：要测试解锁情况的策略组或节点。\n怎么填：填策略组名或节点名，多个用竖线分隔。\n· 美国|日本|中国台湾|中国香港\n· Proxy\n· 留空则只测 FINAL 那条兜底组\n注意：名称必须是当前配置里真实存在的策略，否则该行显示服务不可用。\n\n【平台】\n是什么：要测试哪些流媒体或 AI 平台。\n怎么填：填平台简写，多个用逗号分隔；留空则全测。\n· netflix / nf / 网飞 / 奈飞\n· disney / 迪士尼\n· youtube / yt / 油管\n· chatgpt / gpt / openai\n· ai 表示三个 AI 平台一起测\n注意：认识的简写不区分大小写，未识别的写法会被忽略。\n\n————\n\n共 16 个平台：Netflix、Disney+、YouTube、Prime Video、Spotify、HBO Max、Hulu、Paramount+、Peacock、Viu、Abema、巴哈动画疯、B站港澳台，以及 ChatGPT、Claude、Gemini。\n图标含义：✅ 已解锁 / 🟡 部分解锁或信号不明 / ❌ 未解锁 / ⚠️ 请求失败可重刷。\n测试会产生真实请求流量，按需执行。
 
 [Panel]
 流媒体解锁 = title="流媒体解锁",content="正在逐个平台实测…\n\n十六家平台各发一次真实请求，一般 3 秒出结果。\n点右上角的刷新按钮可以立即重测。",style=info,script-name=流媒体解锁,update-interval=1800
