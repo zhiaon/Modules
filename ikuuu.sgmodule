@@ -1,6 +1,7 @@
 #!name=iKuuu 每日签到
 #!desc=V1.2 仅保留自动签到（无面板）：Cookie 自动抓取 + 每日定时签到，已移除面板与手动签到脚本。通知里只报服务器原文与剩余流量。
 #!author=Yjwj205 / 许舟（Surge 移植）
+#!version=1.2
 #!category=工具
 #!icon=calendar.badge.checkmark
 #!homepage=https://github.com/Yjwj205/loon-modules
