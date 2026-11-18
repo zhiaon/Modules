@@ -3,11 +3,11 @@
 #!author=许舟
 #!version=1.1
 #!category=工具
-#!arguments=城市:宣城,通知:true,请求节点:-,降雨提醒阈值:50
-#!arguments-desc=【城市】\n决定查哪个地方的天气。三种写法都行：\n· 城市名：宣城 / 杭州 / 上海\n· 经纬度：30.94,118.75\n· 自动：按出口 IP 定位\n\n中文名先走 Nominatim，找不到再走 Open-Meteo 地理编码。\n没填就用「宣城」。\n\n【通知】\n开（true）：每天 07:30 推一次当天天气和出门建议，同一天只推一次。\n关（false）：不推送，面板照常更新。\n\n【请求节点】\n可填策略组或节点名，例如 Proxy、DIRECT、日本。\n填 - 表示跟随当前规则。\n\n只有「自动」才受这一项影响：走代理会定位到代理所在地，想按本机网络就填 DIRECT。但 DIRECT 下天气接口容易超时，所以一般直接填城市名或经纬度最省心。\n\n【降雨提醒阈值】\n降水概率到这个数就建议带伞，范围 0~100，默认 50。\n\n· 50 = 一半概率就提醒\n· 80 = 只有很大概率才提醒\n· 100 = 基本不提醒\n\n————\n\n数据来自 Open-Meteo，不需要 API Key。\n面板每 30 分钟自己更新一次，右上角刷新可立即查询。\n网络失败时显示上次同地点的成功数据。
+#!arguments=城市:-,通知:true,请求节点:-,降雨提醒阈值:50
+#!arguments-desc=【城市】\n决定查哪个地方的天气。三种写法都行：\n· 城市名：宣城 / 杭州 / 上海\n· 经纬度：30.94,118.75\n· 自动：按出口 IP 定位\n\n中文名先走 Nominatim，找不到再走 Open-Meteo 地理编码。\n必填，不预填任何城市；留空时面板只显示待配置提示。\n\n【通知】\n开（true）：每天 07:30 推一次当天天气和出门建议，同一天只推一次。\n关（false）：不推送，面板照常更新。\n\n【请求节点】\n可填策略组或节点名，例如 Proxy、DIRECT、日本。\n填 - 表示跟随当前规则。\n\n只有「自动」才受这一项影响：走代理会定位到代理所在地，想按本机网络就填 DIRECT。但 DIRECT 下天气接口容易超时，所以一般直接填城市名或经纬度最省心。\n\n【降雨提醒阈值】\n降水概率到这个数就建议带伞，范围 0~100，默认 50。\n\n· 50 = 一半概率就提醒\n· 80 = 只有很大概率才提醒\n· 100 = 基本不提醒\n\n————\n\n数据来自 Open-Meteo，不需要 API Key。\n面板每 30 分钟自己更新一次，右上角刷新可立即查询。\n网络失败时显示上次同地点的成功数据。
 
 [Panel]
-出门天气卡 = title="出门天气卡",content="正在获取天气…\n\n如长时间无内容，请检查城市参数\n例：宣城 / 30.94,118.75 / 自动",style=info,script-name=going-out-weather-panel,update-interval=1800
+出门天气卡 = title="出门天气卡",content="尚未填写城市\n\n打开模块 → 参数 → 城市\n可填城市名、经纬度或 自动\n例：杭州 / 30.94,118.75 / 自动",style=info,script-name=going-out-weather-panel,update-interval=1800
 
 [Script]
 going-out-weather-panel = type=generic,script-path=https://raw.githubusercontent.com/zhiaon/Modules/main/surge_scripts/going-out-weather.js,script-update-interval=86400,argument="{{{城市}}}|{{{通知}}}|{{{请求节点}}}|{{{降雨提醒阈值}}}",timeout=45,engine=webview
