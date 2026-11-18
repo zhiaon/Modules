@@ -1,6 +1,7 @@
 #!name=Surge 运行监控
 #!desc=V1.2 单张卡片显示 Surge 运行时长、启动时间、配置重载、真实物理内存、采样峰值/最低值和活动连接。自动刷新只监控，20 秒内连续点两次右上角刷新才重启引擎；重启会断开连接并清空缓存和临时规则。需 Surge iOS 6+ 且 http-api-mcp=true。
 #!author=许舟
+#!version=1.2
 #!category=网络
 
 [Panel]
