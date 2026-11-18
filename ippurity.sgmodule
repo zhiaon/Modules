@@ -5,7 +5,7 @@
 #!category=网络
 #!icon=checkmark.shield
 #!arguments=目标:AUTO
-#!arguments-desc=【目标】默认 AUTO：读取 FINAL 策略，再用该策略发起查询。\n也可填写一个策略组或节点的准确名称。\nDIRECT 检测直连出口；RULE 按当前规则访问接口。\n\n★ 只检测查询接口实际看到的一次出口，不代表所有网站或双栈出口。\n★ 无需 Key，无需 MitM。\n\n卡片字段含义：\n出口 IP = 这次请求对端看到的地址\n位置 / ASN / 运营商 = 该地址的归属\nIPQuery 风险分 = 官方 0–100 策略分，取「威胁证据」与「匿名度」较大值，越低越好\n机房 / 移动网络 = 网络归类，机房本身不加分\n代理 / VPN / Tor = 是否命中数据源分类，「未匹配」不等于安全\n\n查询失败会明确提示；若 24 小时内有同策略的成功结果，会显示上次结果并标注时间。
+#!arguments-desc=【目标】\n是什么：要检测出口风险的目标策略。\n怎么填：\n· AUTO 读取 FINAL 策略并发起查询（默认）\n· Proxy 指定策略组\n· DIRECT 检测直连出口\n· RULE 按当前规则访问接口\n注意：填写名称必须是当前配置里真实存在的策略。\n\n————\n\n使用 IPQuery 免 Key 接口，显示 IP、位置、ASN、风险分与 VPN/代理/Tor/机房标签。\n点击刷新，自动刷新间隔 30 分钟。\n未匹配不等于安全，风险分也不是纯净度百分比，仅供参考。
 
 [Panel]
 IP纯净度 = title="IP 纯净度",content="点击检测当前出口 IP 风险",style=info,script-name=IP纯净度,update-interval=1800
