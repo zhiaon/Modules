@@ -1,6 +1,7 @@
 #!name=DNS Lite
 #!desc=V1.0 国内/国外双 DNS 智能分流 + 广告与追踪域名拦截。国内域名走国内 DNS，其余走国外加密 DNS。
 #!author=许舟
+#!version=1.0
 #!category=网络
 #!icon=network
 #!arguments=国内DNS:223.5.5.5,国外DNS:https://cloudflare-dns.com/dns-query,广告拦截:REJECT,白名单1:wl-1.invalid,白名单2:wl-2.invalid,白名单3:wl-3.invalid
