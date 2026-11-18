@@ -304,7 +304,10 @@
       r.style = 'alert';
       return r;
     }
-    return {title: '出门天气', style: 'error', content: '⚠ ' + error + '\n\n打开模块 → 参数 → 城市\n可填城市名、经纬度或 自动\n例：宣城 / 30.94,118.75 / 自动'};
+    if (!cfg.city) {
+      return {title: '出门天气', style: 'info', content: '尚未填写城市\n\n打开模块 → 参数 → 城市\n可填城市名、经纬度或 自动\n例：杭州 / 30.94,118.75 / 自动\n\n城市为必填项，没有预填默认值'};
+    }
+    return {title: '出门天气', style: 'error', content: '⚠ ' + error + '\n\n打开模块 → 参数 → 城市\n可填城市名、经纬度或 自动\n例：杭州 / 30.94,118.75 / 自动'};
   }
   function notify() {
     var isCron = typeof $script !== 'undefined' && $script.type === 'cron';
@@ -336,11 +339,12 @@
     if (typeof $script !== 'undefined' && $script.type === 'cron') $done(); else $done(errorPanel(message));
   }
   try {
-    var city = real(p[0]) || '宣城';
+    var city = real(p[0]);
     var threshold = real(p[3]);
     threshold = threshold === '' ? 50 : Number(threshold);
     if (!isFinite(threshold) || threshold < 0 || threshold > 100) throw new Error('降雨提醒阈值需在 0~100 之间');
     cfg = {city: city, notify: truth(p[1], true), policy: real(p[2]), threshold: threshold};
+    if (!city) throw new Error('尚未填写城市');
     timer = setTimeout(function () { fail('查询超时'); }, Math.max(1000, deadline - Date.now()));
     locate(city, function (err, loc) {
       if (err) return fail('地名解析失败：' + err.message);
