@@ -1,6 +1,6 @@
 #!name=双出口 IP 面板
 #!author=许舟
-#!version=1.1.0
+#!version=1.1
 #!desc=V1.1 详细双出口面板：IP、IPv4/IPv6、国家/省市、运营商/组织、ASN、时区、查询来源、每路耗时与更新时间；点右上角刷新立即查询。
 #!category=网络
 #!system=ios
