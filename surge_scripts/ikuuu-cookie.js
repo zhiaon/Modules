@@ -84,12 +84,14 @@
     return $done({});
   }
 
+  var safeHost = /^https:\/\/([^/:?#]+)\/user(?:[/?#]|$)/i.exec(String($request.url || ''));
+  if (!safeHost || !KNOWN_HOST.test(safeHost[1]) || !/^GET$/i.test($request.method || 'GET')) return $done({});
   var existing = "";
   try {
     existing = String($persistentStore.read(COOKIE_KEY) || "");
   } catch (e) {}
 
-  if (existing === cookie) {
+  if (existing === cookie && String($persistentStore.read(HOST_KEY)||"").toLowerCase() === safeHost[1].toLowerCase()) {
     console.log("[iKuuu] Cookie 没有变化，跳过写入");
     return $done({});
   }
@@ -116,10 +118,11 @@
   }
 
   if (saved) {
+    $persistentStore.write(String(Date.now()), "ikuuu_capture_time_v13");
     console.log("[iKuuu] 已保存登录 Cookie（" + cookie.length + " 字节）" + (host ? "，站点 " + host : ""));
     notify("已获取登录 Cookie",
       (host ? "站点：" + host + "\n" : "") +
-      "可以在模块里把「抓取 Cookie」改成 false 关掉了，签到会继续使用这份 Cookie。");
+      "如有待补签到，下一轮定时检查会自动处理，无需手动运行。");
   } else {
     console.log("[iKuuu] 写入本地存储失败");
     notify("Cookie 保存失败", "写入 Surge 本地存储失败，请检查后重试。");

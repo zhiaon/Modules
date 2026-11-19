@@ -1,17 +1,18 @@
 #!name=iKuuu 每日签到
-#!desc=V1.2 仅保留自动签到（无面板）：Cookie 自动抓取 + 每日定时签到，已移除面板与手动签到脚本。通知里只报服务器原文与剩余流量。
+#!desc=V1.3 每日签到 + 每10分钟本地补签检查；失效等待重新登录，成功后当天不重复提交。
 #!author=Yjwj205 / 许舟（Surge 移植）
-#!version=1.2
+#!version=1.3
 #!category=工具
 #!icon=calendar.badge.checkmark
 #!homepage=https://github.com/Yjwj205/loon-modules
 #!date=2026-11-15
 #!arguments=cookie:-,capture:true,notify:true,cron:0 8 * * *,enabled:true,node:-,site:auto
-#!arguments-desc=【cookie】\n是什么：登录 ikuuu 后的会话凭据。\n怎么填：两种方式任选。\n· - 留空，使用「抓取 Cookie」自动保存的那份\n· 直接粘贴 Cookie 整行，带 Cookie: 前缀也能识别\n注意：手动填写的优先级更高；Cookie 会随登录状态失效，失效需重新获取。\n\n【capture】\n是什么：是否自动抓取登录 Cookie。\n怎么填：\n· true 在 Safari 打开站点登录一次，自动保存 Cookie（默认）\n· false 不再写入新的 Cookie\n注意：关掉只是停止抓取，已保存的 Cookie 仍然可用；抓到后可关掉，省得每次打开站点都跑脚本。\n\n【notify】\n是什么：签到完成后是否发系统通知。\n怎么填：\n· true 弹通知，内容含服务器原文与剩余流量（默认）\n· false 静默执行\n注意：关闭只影响通知，签到照常进行。\n\n【cron】\n是什么：定时签到执行的时间。\n怎么填：五段 cron，依次是 分 时 日 月 周。\n· 0 8 * * * 每天 08:00（默认）\n· 30 7 * * * 每天 07:30\n注意：使用本机时区，改完需重载模块生效。\n\n【enabled】\n是什么：是否开启定时签到。\n怎么填：\n· true 按 cron 自动签到（默认）\n· false 停止自动签到\n注意：本项目前只保留自动签到，没有内置面板。\n\n【node】\n是什么：签到请求使用的策略。\n怎么填：填策略组名或节点名。\n· - 留空，跟随当前规则（默认）\n· DIRECT 直连\n· Proxy 通过代理组\n注意：只有偶尔出现证书或 TLS 报错时才需要固定到某个节点。\n\n【site】\n是什么：签到使用的站点域名。\n怎么填：\n· auto 自动使用抓 Cookie 时的域名，没抓过则用 ikuuu.org（默认）\n· ikuuu.org / ikuuu.pw / ikuuu.me 强制指定\n注意：站点更换域名后需同步修改，否则会签到失败。\n\n————\n\n开关类参数只认 true 和 false 最稳妥；也兼容 0 / off / no / 关 / 关闭。\n写错成其他字样时按开启处理，建议统一用 true / false。\nCookie 与授权信息保存在模块持久化存储中，不写入脚本、不显示在面板。
+#!arguments-desc=【cookie】\n是什么：登录 ikuuu 后的会话凭据。\n怎么填：两种方式任选。\n· - 留空，使用「抓取 Cookie」自动保存的那份\n· 直接粘贴 Cookie 整行，带 Cookie: 前缀也能识别\n注意：优先手填；确认手填值失效后，同站重新抓到的新会话可用于补签。\n\n【capture】\n是什么：是否自动抓取登录 Cookie。\n怎么填：\n· true 在 Safari 打开站点登录一次，自动保存 Cookie（默认）\n· false 不再写入新的 Cookie\n注意：关掉只是停止抓取，已保存的 Cookie 仍然可用；要自动接收重新登录后的 Cookie，请保持开启并打开用户中心。\n\n【notify】\n是什么：签到完成后是否发系统通知。\n怎么填：\n· true 弹通知，内容含服务器原文与剩余流量（默认）\n· false 静默执行\n注意：关闭只影响通知，签到照常进行。\n\n【cron】\n是什么：每日首次签到时间。另有每10分钟本地补签检查，已签或等待登录时不请求签到接口。\n怎么填：五段 cron，依次是 分 时 日 月 周。\n· 0 8 * * * 每天 08:00（默认）\n· 30 7 * * * 每天 07:30\n注意：使用本机时区，改完需重载模块生效。\n\n【enabled】\n是什么：是否开启定时签到。\n怎么填：\n· true 按 cron 自动签到（默认）\n· false 停止自动签到\n注意：本项目前只保留自动签到，没有内置面板。\n\n【node】\n是什么：签到请求使用的策略。\n怎么填：填策略组名或节点名。\n· - 留空，跟随当前规则（默认）\n· DIRECT 直连\n· Proxy 通过代理组\n注意：只有偶尔出现证书或 TLS 报错时才需要固定到某个节点。\n\n【site】\n是什么：签到使用的站点域名。\n怎么填：\n· auto 自动使用抓 Cookie 时的域名，没抓过则用 ikuuu.org（默认）\n· ikuuu.org / ikuuu.pw / ikuuu.me 强制指定\n注意：站点更换域名后需同步修改，否则会签到失败。\n\n————\n\n开关类参数只认 true 和 false 最稳妥；也兼容 0 / off / no / 关 / 关闭。\n写错成其他字样时按开启处理，建议统一用 true / false。\nCookie 与授权信息保存在模块持久化存储中，不写入脚本、不显示在面板。
 
 [Script]
-iKuuu Cookie 抓取 = type=http-request,pattern=^https?:\/\/(?:[a-z0-9-]+\.)*ikuuu\.(?:org|pw|me)\/,script-path=https://raw.githubusercontent.com/zhiaon/Modules/main/surge_scripts/ikuuu-cookie.js,script-update-interval=86400,argument="{{{capture}}}|{{{notify}}}",timeout=10
+iKuuu Cookie 抓取 = type=http-request,pattern=^https:\/\/(?:[a-z0-9-]+\.)*ikuuu\.(?:org|pw|me)\/user(?:[/?]|$),script-path=https://raw.githubusercontent.com/zhiaon/Modules/main/surge_scripts/ikuuu-cookie.js,script-update-interval=86400,argument="{{{capture}}}|{{{notify}}}",timeout=10
 iKuuu 定时签到 = type=cron,cronexp="{{{cron}}}",script-path=https://raw.githubusercontent.com/zhiaon/Modules/main/surge_scripts/ikuuu-checkin.js,script-update-interval=86400,argument="{{{cookie}}}|{{{notify}}}|{{{node}}}|{{{enabled}}}|{{{site}}}",timeout=60,wake-system=true
+iKuuu 补签检查 = type=cron,cronexp="*/10 * * * *",script-path=https://raw.githubusercontent.com/zhiaon/Modules/main/surge_scripts/ikuuu-checkin.js,script-update-interval=86400,argument="{{{cookie}}}|{{{notify}}}|{{{node}}}|{{{enabled}}}|{{{site}}}|loop|{{{cron}}}",timeout=60,wake-system=true
 
 [MITM]
 hostname = %APPEND% ikuuu.org, *.ikuuu.org, ikuuu.pw, *.ikuuu.pw, ikuuu.me, *.ikuuu.me

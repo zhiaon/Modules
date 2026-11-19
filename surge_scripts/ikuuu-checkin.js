@@ -1,170 +1,51 @@
-/**
- * iKuuu 自动签到（Surge 版 · cron / generic 两用）
- *
- * 移植自 Yjwj205/loon-modules 的 iKuuu 插件（Loon → Surge API 转换）
- *
- * 参数由模块参数表按竖线拼接：
- *   cookie  ｜ 手动 Cookie，留空则用自动抓取到的
- *   notify  ｜ 是否发系统通知，默认 true
- *   node    ｜ 指定策略组/节点名（如 Proxy、DIRECT），留空跟随规则
- *   enabled ｜ 定时签到开关，false 时 cron 触发直接退出
- *
- * 触发方式：
- *   type=cron     → 按 cronexp 定时签到
- *   面板刷新按钮 → $trigger=button，立即签到
- *   面板自动刷新 → $trigger=auto-interval，只显示上次结果，不发请求
- *
- * 流程：POST https://ikuuu.org/user/checkin → 解析 {ret,msg} → GET /user 读剩余流量
- */
-(function () {
-  "use strict";
-
-  var HOST = "https://ikuuu.org";   // 会在解析参数后被实际站点覆盖
-  var COOKIE_KEY = "ikuuu_org_cookie";
-  var HOST_KEY = "ikuuu_site_host";
-  var RESULT_KEY = "ikuuu_last_result";
-  var MAX_ATTEMPTS = 3;
-  var UA = "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) " +
-    "AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1";
-
-  /* ---------- 参数 ---------- */
-
-  function isOff(value) {
-    var s = String(value === null || value === undefined ? "" : value).trim().toLowerCase();
-    if (s === "") return false;
-    return s === "0" || s === "false" || s === "off" || s === "no" ||
-      s === "关" || s === "否" || s === "关闭";
-  }
-
-  function onByDefault(value) {
-    var s = String(value === null || value === undefined ? "" : value).trim();
-    if (s === "") return true;
-    return !isOff(s);
-  }
-
-  // Surge 的模块参数必须有默认值，界面上的「-」代表留空
-  function cleanEmpty(value) {
-    var s = String(value === null || value === undefined ? "" : value).trim();
-    return (s === "-" || s === "none" || s === "null") ? "" : s;
-  }
-
-  var rawArg = (typeof $argument === "string") ? $argument : "";
-  var parts = rawArg.split("|");
-  var manualCookie = cleanEmpty(parts[0])
-    .replace(/^\s*cookie\s*:\s*/i, "")
-    .replace(/[\r\n]+/g, " ")
-    .trim();
-  var notifyEnabled = onByDefault(parts[1]);
-  var requestNode = cleanEmpty(parts[2]);
-  var cronEnabled = onByDefault(parts[3]);
-
-  // 站点：参数指定 > 抓 Cookie 时记下的 > ikuuu.org，只允许 ikuuu 自家域名
-  function normalizeHost(value) {
-    var s = String(value === null || value === undefined ? "" : value).trim().toLowerCase();
-    s = s.replace(/^https?:\/\//, "").replace(/\/.*$/, "");
-    if (!s || s === "-" || s === "none" || s === "null") return "";
-    return /^(?:[a-z0-9-]+\.)*ikuuu\.(?:org|pw|me)$/.test(s) ? s : "";
-  }
-
-  var siteArg = cleanEmpty(parts[4]);
-  var savedHost = "";
-  try {
-    savedHost = String($persistentStore.read(HOST_KEY) || "").trim();
-  } catch (e) {}
-  var siteHost = normalizeHost(siteArg) || normalizeHost(savedHost) || "ikuuu.org";
-  HOST = "https://" + siteHost;
-
-  var trigger = (typeof $trigger === "string") ? $trigger : "";
-  var cronRun = (typeof $cronexp === "string" && $cronexp !== "");
-
-  if (cronRun && !cronEnabled) {
-    console.log("[iKuuu] 定时签到已关闭，本次触发跳过");
-    return $done();
-  }
-
-  var savedCookie = "";
-  try {
-    savedCookie = String($persistentStore.read(COOKIE_KEY) || "").trim();
-  } catch (e) {
-    console.log("[iKuuu] 读取本地 Cookie 失败：" + e);
-  }
-
-  var cookie = manualCookie || savedCookie;
-
-  /* ---------- 面板 / 通知 ---------- */
-
-  function clockText() {
-    var d = new Date();
-    function p(n) { return (n < 10 ? "0" : "") + n; }
-    return (d.getMonth() + 1) + "-" + p(d.getDate()) + " " + p(d.getHours()) + ":" + p(d.getMinutes());
-  }
-
-  function finish(subtitle, content, style) {
-    style = style || "info";
-    var body = String(content === null || content === undefined ? "" : content);
-    try {
-      $persistentStore.write(
-        JSON.stringify({ t: clockText(), s: subtitle, c: body, k: style }),
-        RESULT_KEY
-      );
-    } catch (e) {}
-
-    if (notifyEnabled) {
-      try {
-        $notification.post("iKuuu 签到", subtitle, body);
-      } catch (e) {
-        console.log("[iKuuu] 通知发送失败：" + e);
-      }
-    }
-    console.log("[iKuuu] " + subtitle + " | " + body.replace(/\n/g, " / "));
-
-    $done({
-      title: "iKuuu 签到",
-      content: "【" + subtitle + "】\n" + body + "\n\n" + clockText() + " · " + siteHost,
-      style: style
-    });
-  }
-
-  function showLast() {
-    var raw = "";
-    try {
-      raw = String($persistentStore.read(RESULT_KEY) || "");
-    } catch (e) {}
-    if (!raw) {
-      return $done({
-        title: "iKuuu 签到",
-        content: "还没有签到记录\n\n点右上角刷新按钮立即签到",
-        style: "info"
-      });
-    }
-    var o = {};
-    try { o = JSON.parse(raw) || {}; } catch (e) {}
-    $done({
-      title: "iKuuu 签到",
-      content: "【" + String(o.s || "-") + "】\n" + String(o.c || "") +
-        "\n\n" + String(o.t || "") + " · " + siteHost + "\n点右上角刷新按钮立即签到",
-      style: String(o.k || "info")
-    });
-  }
-
-  if (trigger === "auto-interval" && !cronRun) return showLast();
-
-  /* ---------- 请求 ---------- */
-
-  function requestOptions(url, headers, useNode) {
-    var options = {
-      url: url,
-      timeout: 15,
-      insecure: true,
-      "auto-cookie": false,
-      headers: headers
-    };
-    if (useNode && requestNode) options.policy = requestNode;
-    return options;
-  }
-
-  /* ---------- Base64 / UTF-8（站点页面把正文 base64 塞在 var originBody 里） ---------- */
-
+/* iKuuu 每日签到 V1.3 · Yjwj205 / 许舟（Surge 移植） */
+(function(){'use strict';
+const raw=typeof $argument==='string'?$argument:'', p=raw.split('|');
+const empty=v=>!v||/^(?:-|none|null)$/i.test(v.trim());
+const on=v=>! /^(?:0|false|off|no|关|否|关闭)$/i.test(String(v||'').trim());
+const read=k=>$persistentStore.read(k)||'';
+const load=k=>{try{return JSON.parse(read(k))||{};}catch(_){return {};}};
+const save=(k,o)=>{if(!$persistentStore.write(JSON.stringify(o),k))throw Error('storage');};
+const hostOf=v=>{v=String(v||'').trim().toLowerCase().replace(/^https?:\/\//,'').split('/')[0];return /^(?:[a-z0-9-]+\.)*ikuuu\.(?:org|pw|me)$/.test(v)?v:'';};
+const day=ms=>{const d=new Date(ms);return [d.getFullYear(),d.getMonth()+1,d.getDate()].join('-');};
+// Non-reversible comparison tag; keep the session value only in the original credential slot.
+function tag(s){let keys=s.split(';').map(x=>x.trim()).filter(x=>/^(?:auth|uid|key|email|expire_in|session|remember_[^=;]+)=/i.test(x)).sort();const v=keys.length?keys.join(';'):s;let a=2166136261,b=5381;for(let i=0;i<v.length;i++){a=Math.imul(a^v.charCodeAt(i),16777619);b=Math.imul(b,33)^v.charCodeAt(i);}return (a>>>0).toString(36)+'.'+(b>>>0).toString(36);}
+function dailyDue(expr,now){const m=/^(\d{1,2})\s+(\d{1,2})\s+\*\s+\*\s+\*$/.exec(expr||'');let d=new Date(now);return !!m && +m[1]<60 && +m[2]<24 && d.getHours()*60+d.getMinutes()>=+m[2]*60+ +m[1];}
+function result(kind,msg){if(on(p[1])){try{$notification.post('iKuuu 签到',kind,msg);}catch(_){}}try{save('ikuuu_last_result',{t:new Date().toLocaleString(),s:kind,c:msg,k:kind==='签到成功'?'good':'info'});}catch(_){} }
+function request(method,url,cookie,node){return new Promise((resolve,reject)=>{const opts={url,timeout:10,'auto-redirect':false,'auto-cookie':false,headers:{Cookie:cookie,Referer:url.split('/user')[0]+'/user',Accept:method==='post'?'application/json':'text/html'}};if(node)opts.policy=node;if(method==='post'){opts.headers.Origin=url.split('/user')[0];opts.headers['X-Requested-With']='XMLHttpRequest';opts.headers['Content-Type']='application/x-www-form-urlencoded; charset=UTF-8';} $httpClient[method](opts,(err,r,body)=>err?reject(Error('network')):resolve({code:Number(r&&r.status),headers:r&&r.headers||{},body:String(body||'')}));});}
+function header(r,k){const n=Object.keys(r.headers).find(x=>x.toLowerCase()===k);return n?String(r.headers[n]):'';}
+function classify(r){const c=r.code;let j;try{j=JSON.parse(r.body);}catch(_){}const msg=j&&typeof j.msg==='string'?j.msg:'';
+ if(c===401 || (c>=300&&c<400&&/\/(?:auth\/)?login(?:[/?#]|$)/i.test(header(r,'location'))) || (c===200&&(/请(?:重新|先)登[录陸]|未登[录陸]|登录(?:已)?(?:过期|失效)/.test(msg)||(!j&&/<form\b[^>]*action=["'][^"']*(?:\/auth\/login|\/login)["']/i.test(r.body)))))return 'auth';
+ if(c===429)return 'limit';if(c===403)return 'blocked';if(c!==200)return 'retry';
+ if(j&&(j.ret===1||j.ret==='1'))return 'success';if(j&&/(?:已(?:经)?签到|已经?签过|重复签到|签到过了|明天再来)/.test(msg))return 'already';return 'retry';}
+async function main(){if(!on(p[3]))return;const now=Date.now(),today=day(now),loop=p[5]==='loop';
+ const origin=hostOf(read('ikuuu_site_host')),fixed=hostOf(p[4]),host=fixed||origin||'ikuuu.org',base='https://'+host;
+ const key='ikuuu_recovery_v13_'+host, st=load(key);
+ if(st.lock>now||st.next>now)return;
+ if(loop&&st.open!==today&&!st.wait&&!dailyDue(p[6],now))return;
+ const manual=empty(p[0])?'':p[0].trim().replace(/^cookie:\s*/i,'');const saved=origin===host?read('ikuuu_org_cookie'):'';
+ const captured=Number(read('ikuuu_capture_time_v13'))||0;
+ const m=manual?tag(manual):'',s=saved?tag(saved):'';
+ let cookie=manual && m!==st.badManual?manual: saved && s!==st.badSaved && s!==st.badManual && (!manual||captured>=st.manualInvalidAt)?saved:'';
+ if(!cookie||/[\r\n]/.test(cookie)){st.open=today;st.wait=true;if(!st.warn){st.warn=true;save(key,st);result('等待重新登录','请在 Safari 登录 iKuuu 并打开用户中心。抓到新 Cookie 后会自动补签。');}else save(key,st);return;}
+ const fp=tag(cookie);if(st.done===today&&st.doneTag===fp)return;if(st.triesDay!==today||st.triesTag!==fp){st.tries=0;st.triesDay=today;st.triesTag=fp;}
+ if(st.tries>=5)return;st.open=today;st.lock=now+60000;st.tries++;save(key,st);
+ let r,kind;try{const node=empty(p[2])?'':p[2];r=await request('get',base+'/user',cookie,node);kind=classify(r);
+ if(r.code===200 && kind!=='auth'){
+ const html=extractHtml(r.body);const box=html.match(/<div\b[^>]*\bid=["']checkin-div["'][^>]*>([\s\S]{0,2500}?)<\/div>/i);
+ const action=box && box[1].match(/<(a|button)\b([^>]*)>([\s\S]*?)<\/\1>/i);kind='unknown';
+ if(action){const label=action[3].replace(/<[^>]+>/g,'').replace(/\s+/g,'');const disabled=/\bdisabled\b/i.test(action[2]);
+ if(disabled && /明[日天]再来|已(?:经)?签到|已签过/.test(label))kind='skip';
+ else if(!disabled && (/^(?:(?:今日|每日|立即|点击)?签到(?:领(?:取)?流量)?|未签到)$/.test(label)||(/\bid=["']checkin["']/i.test(action[2])&&/签到/.test(label)))){r=await request('post',base+'/user/checkin',cookie,node);kind=classify(r);}}
+ }
+ }catch(_){kind='retry';}
+ if(kind==='skip'){st.lock=0;st.done=today;st.doneTag=fp;st.wait=false;st.warn=false;st.next=0;st.tries=0;save(key,st);console.log('[iKuuu] 官网已签，跳过提交');return;}
+ st.lock=0;
+ if(kind==='success'||kind==='already'){st.done=today;st.doneTag=fp;st.wait=false;st.warn=false;st.next=0;st.tries=0;save(key,st);
+ let msg=String((JSON.parse(r.body)||{}).msg||'今日签到已确认').slice(0,180);try{const q=await request('get',base+'/user',cookie,empty(p[2])?'':p[2]);if(q.code===200){const v=pick(extractHtml(q.body),'剩余流量');if(v)msg+='\n剩余流量：'+v;}}catch(_){} result(kind==='success'?'签到成功':'今日已签到',msg);return;}
+ if(kind==='auth'){if(cookie===manual){st.badManual=fp;st.manualInvalidAt=Date.now();}else st.badSaved=fp;st.wait=true;const warn=!st.warn;st.warn=true;save(key,st);if(warn)result('Cookie 已失效','请在 Safari 重新登录 '+host+' 并进入用户中心。旧 Cookie 不再重试。');return;}
+ let seconds=Math.min(7200,600*Math.pow(2,st.tries-1));if(kind==='limit'){let h=header(r,'retry-after');const t=/^\d+$/.test(h)?Number(h):(Date.parse(h)-now)/1000;seconds=Math.max(1800,seconds,Number.isFinite(t)?t:0);}if(kind==='blocked')st.tries=5;
+ st.next=Date.now()+seconds*1000;save(key,st);if(st.tries===1||st.tries>=5)result('签到未确认',kind==='blocked'?'站点拒绝访问，请在官网检查；今天不再自动尝试。':st.tries>=5?'本日重试已达上限。':'本次未收到签到确认，稍后自动重试。');}
   var B64_CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 
   function utf8Decode(bytes) {
@@ -227,123 +108,7 @@
     return m2 ? m2[1] + " " + m2[2].toUpperCase() : null;
   }
 
-  /* ---------- 签到后读剩余流量（失败不影响签到结论） ---------- */
 
-  function fetchTraffic(callback, attempt) {
-    attempt = attempt || 1;
-    var options = requestOptions(HOST + "/user", {
-      "Cookie": cookie,
-      "User-Agent": UA,
-      "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-      "Referer": HOST + "/user"
-    }, attempt === 1);
-
-    $httpClient.get(options, function (error, response, data) {
-      if (error && attempt < 2) {
-        return setTimeout(function () {
-          fetchTraffic(callback, attempt + 1);
-        }, 1000);
-      }
-      if (error || !data) return callback(null);
-      try {
-        var html = extractHtml(data);
-        var rest = pick(html, "剩余流量");
-        callback(rest ? "剩余流量：" + rest : null);
-      } catch (e) {
-        console.log("[iKuuu] 解析流量失败：" + e);
-        callback(null);
-      }
-    });
-  }
-
-  /* ---------- 主流程 ---------- */
-
-  function handleCheckin(error, response, data, attempts) {
-    if (error) {
-      var errText = String(error);
-      if (/certificate|SSL|TLS/i.test(errText)) {
-        return finish("TLS 校验失败", [
-          "签到请求连续 " + attempts + " 次没通过证书校验（insecure 已开启）。",
-          "① 在模块参数「请求节点」里指定一个节点/策略组，排除线路证书问题；",
-          "② 检查 Surge 的 MITM 证书是否已安装并信任；",
-          "③ 不需要自动抓 Cookie 的话，到模块里删掉 [MITM] 段、改用手动 Cookie。",
-          "",
-          errText.slice(0, 160)
-        ].join("\n"), "error");
-      }
-      return finish("请求失败", "签到接口请求出错（已试 " + attempts + " 次）：" + errText, "error");
-    }
-
-    var status = (response && response.status) ? response.status : 0;
-    var text = String(data === null || data === undefined ? "" : data).trim();
-    var json = null;
-    try {
-      json = JSON.parse(text);
-    } catch (e) {}
-
-    if (!json || typeof json !== "object") {
-      if (status === 302 || /<html|<script/i.test(text)) {
-        return finish("Cookie 已失效",
-          "服务器返回的是登录页，请在 Safari 重新登录 https://" + siteHost + "（模块会自动更新 Cookie）。", "alert");
-      }
-      return finish("签到失败",
-        "返回内容无法解析（HTTP " + status + "）：" + text.slice(0, 120), "error");
-    }
-
-    var ret = Number(json.ret);
-    var msg = String(json.msg || "").trim() || "服务器没有返回说明";
-    var already = /已经?签到|重复签到|签到过了|明天再来/.test(msg);
-    var subtitle, style;
-    if (ret === 1) {
-      subtitle = "签到成功";
-      style = "good";
-    } else if (already) {
-      subtitle = "今日已签到";
-      style = "info";
-    } else if (/未登录|登录.*(?:失效|过期)|请重新登录|请先登录/.test(msg)) {
-      subtitle = "Cookie 已失效";
-      style = "alert";
-    } else {
-      subtitle = "签到失败";
-      style = "error";
-    }
-
-    fetchTraffic(function (traffic) {
-      var content = msg;
-      if (traffic) content += "\n" + traffic;
-      finish(subtitle, content, style);
-    });
-  }
-
-  function attemptCheckin(attempt) {
-    var options = requestOptions(HOST + "/user/checkin", {
-      "Cookie": cookie,
-      "User-Agent": UA,
-      "Accept": "application/json, text/javascript, */*; q=0.01",
-      "Referer": HOST + "/user",
-      "Origin": HOST,
-      "X-Requested-With": "XMLHttpRequest",
-      "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8"
-    }, attempt === 1);
-
-    $httpClient.post(options, function (error, response, data) {
-      if (error && attempt < MAX_ATTEMPTS) {
-        console.log("[iKuuu] 第 " + attempt + " 次请求失败：" + error + "，1.5 秒后重试");
-        return setTimeout(function () {
-          attemptCheckin(attempt + 1);
-        }, 1500);
-      }
-      handleCheckin(error, response, data, attempt);
-    });
-  }
-
-  if (!cookie) {
-    return finish("没有 Cookie", [
-      "还没拿到登录 Cookie。",
-      "① 让模块的「抓取 Cookie」保持 true，在 Safari 打开 https://" + siteHost + " 登录一次；",
-      "② 或在模块参数的「Cookie」里手动粘贴。"
-    ].join("\n"), "alert");
-  }
-
-  attemptCheckin(1);
-})();
+if(typeof module!=='undefined'&&module.exports)module.exports={classify,tag,dailyDue};
+if(typeof $done==='function')main().then(()=>$done(),()=>{console.log('[iKuuu] 状态存储或执行失败');$done();});
+}());
