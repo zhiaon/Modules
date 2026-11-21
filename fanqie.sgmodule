@@ -1,7 +1,7 @@
 #!name=番茄小说去广告
-#!desc=V1.25：移除 p3/p11-webcast-sign.douyinpic.com 拦截，避免误伤抖音评论头像；V1.24 基础：新增 lf-fe*.fqnovelstatic.com 拦截 —— 实测「番茄送你惊喜电商券」运营弹窗弹出瞬间拉 1.1 MB 活动页前端包；V1.23 基础：摘除失效的 [Script] 段（番茄证书固定，fanqie_clean.js 永远跑不起来，纯占位误导）；V1.22 基础：撤回 pddpic 拦截（会误伤拼多多App图片），活动卡改靠接口断供，仅做 SNI/域名层拦截
+#!desc=V1.26：移除 ecomuser、商品图 item/aio 及 ecombdapi/ecombdstatic 的共享电商拦截，兼容抖音商城；保留明确广告素材与 SDK 拦截。V1.25：移除 p3/p11-webcast-sign.douyinpic.com 拦截，避免误伤抖音评论头像；V1.24 基础：新增 lf-fe*.fqnovelstatic.com 拦截 —— 实测「番茄送你惊喜电商券」运营弹窗弹出瞬间拉 1.1 MB 活动页前端包；V1.23 基础：摘除失效的 [Script] 段（番茄证书固定，fanqie_clean.js 永远跑不起来，纯占位误导）；V1.22 基础：撤回 pddpic 拦截（会误伤拼多多App图片），活动卡改靠接口断供，仅做 SNI/域名层拦截
 #!author=许舟
-#!version=1.25
+#!version=1.26
 
 [Rule]
 # 统一标准：按广告链路的域名家族与 SNI/Host 拦截，不追随可变 CDN IP，避免误伤头像/图片 CDN
@@ -15,8 +15,7 @@ DOMAIN,aweme.snssdk.com,DIRECT,extended-matching
 DOMAIN,i.snssdk.com,DIRECT,extended-matching
 DOMAIN,is.snssdk.com,DIRECT,extended-matching
 DOMAIN,vas.snssdk.com,DIRECT,extended-matching
-# ecomuser 是电商/推广位下发接口（截图底部「预约赢 iPhone」卡片就走这里），拦掉
-DOMAIN,ecomuser.snssdk.com,REJECT,extended-matching
+# 共享电商入口交由主配置分流，避免误伤抖音商城（V1.26）
 DOMAIN,effect.snssdk.com,DIRECT,extended-matching
 DOMAIN,gurd.snssdk.com,DIRECT,extended-matching
 # 关键登录/内容接口保留直连，避免误伤正文
@@ -62,9 +61,7 @@ DOMAIN,activity-ag.awemeughun.com,REJECT,extended-matching
 # 结果 frontier-aweme-jj-ipainner.amemv.com（段评/评论接口）被一起打掉，
 # 段评白屏「网络出错」——这是实测踩过的坑，不要改回关键词。
 DOMAIN,frontier-aweme.snssdk.com,REJECT,extended-matching
-# 电商广告素材：p3-aio 只拦主域会漏 p26-item/p3-item 等，改家族关键词
-DOMAIN-KEYWORD,-item.ecombdimg.com,REJECT,extended-matching
-DOMAIN-KEYWORD,-aio.ecombdimg.com,REJECT,extended-matching
+# 通用商品图 CDN 交由主配置分流，仅保留明确的广告素材家族。
 DOMAIN-KEYWORD,-ad.ecombdimg.com,REJECT,extended-matching
 DOMAIN,ads5-normal-hl.zijieapi.com,REJECT,extended-matching
 DOMAIN,ads3-normal-hl.zijieapi.com,REJECT,extended-matching
@@ -111,12 +108,8 @@ DOMAIN,frontier100-toutiao-lf.fqnovel.com,REJECT,extended-matching
 DOMAIN-KEYWORD,-open.douyin.com,REJECT,extended-matching
 DOMAIN-KEYWORD,-open-lf.douyin.com,REJECT,extended-matching
 # 图片统一交由主配置放行，避免误伤抖音评论头像。
-# 2) 底部常驻浮层（互动剧 / 查看详情）：电商广告下发与素材
-# V1.18 改整族拦截：实测 ecom5/ecom3/isaas5/ecset5/ecset3 只是当时抓到的实例，
-# 实际还有 ecom-normal-m / ec5-core-lf / isaas3 / ecset5-core-m-zjg / ecom5-normal-m-zjg 等
-# 同族主机继续下发。逐个域名写会永远漏，改按后缀整族拒绝。
-DOMAIN-SUFFIX,ecombdapi.com,REJECT,extended-matching
-DOMAIN-SUFFIX,ecombdstatic.com,REJECT,extended-matching
+# 2) 底部常驻浮层（互动剧 / 查看详情）：仅保留独立广告落地页
+# V1.26：电商 API / 静态资源与抖音商城共用，不再按整族拦截。
 DOMAIN-SUFFIX,yingt.fun,REJECT,extended-matching
 DOMAIN-SUFFIX,ndcpp.com,REJECT,extended-matching
 # ===== V1.24 阅读页「番茄送你惊喜电商券」运营弹窗 =====

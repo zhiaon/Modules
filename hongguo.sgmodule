@@ -1,7 +1,7 @@
 #!name=红果短剧去广告
-#!desc=V1.2 新增红果专属广告域（hongguoapp / hongguosdk / hongguo.ad）、穿山甲 SDK 直连域（pangolin-sdk-toutiao、ad.pangolin.cn）、联盟 SDK 关键字 ad-union-sdk、字节兜底 be-pack 与 tnc.snssdk；刻意不写 zijieapi 整域拦截，避免连带 api5-normal 业务接口。纯域名层去广告，不需要 MITM 与证书。
+#!desc=V1.3：移除第⑧段6条共享电商拦截，避免误伤抖音商城；保留红果专属、广告 SDK 与素材拦截。V1.2 新增红果专属广告域（hongguoapp / hongguosdk / hongguo.ad）、穿山甲 SDK 直连域（pangolin-sdk-toutiao、ad.pangolin.cn）、联盟 SDK 关键字 ad-union-sdk、字节兜底 be-pack 与 tnc.snssdk；刻意不写 zijieapi 整域拦截，避免连带 api5-normal 业务接口。纯域名层去广告，不需要 MITM 与证书。
 #!author=许舟
-#!version=1.2
+#!version=1.3
 #!category=去广告
 #!icon=https://is1-ssl.mzstatic.com/image/thumb/Purple221/v4/df/05/06/df050609-8be3-0daf-d35b-f29a143d0677/AppIcon-0-0-1x_U007emarketing-0-8-0-85-220.png/120x120bb.jpg
 #!openUrl=https://apps.apple.com/cn/app/id6451407032
@@ -112,13 +112,9 @@ DOMAIN-WILDCARD,webcast*-open*.douyin.com,REJECT,extended-matching,pre-matching
 DOMAIN-WILDCARD,webcast*-open*.cdnbuild.net,REJECT,extended-matching,pre-matching
 DOMAIN-WILDCARD,webcast*-open*.cdn.dsa.cdnbuild.net,REJECT,extended-matching,pre-matching
 
-# ============ ⑧ 电商推广位（想用内置商城就注释掉这一段）============
-DOMAIN-WILDCARD,ecom*-normal*.ecombdapi.com,REJECT,extended-matching,pre-matching
-DOMAIN-WILDCARD,ec*-core*.ecombdapi.com,REJECT,extended-matching,pre-matching
-DOMAIN-WILDCARD,isaas*-normal*.ecombdapi.com,REJECT,extended-matching,pre-matching
-DOMAIN-SUFFIX,ecombdimg.com,REJECT,extended-matching,pre-matching
-DOMAIN-SUFFIX,ecombdstatic.com,REJECT,extended-matching,pre-matching
-DOMAIN-SUFFIX,ecomuser.snssdk.com,REJECT,extended-matching,pre-matching
+# ============ ⑧ 共享电商接口与商品资源 ============
+# V1.3：这些域与抖音商城共用，不再拦截，交由主配置分流。
+# 红果专属、广告 SDK 与明确广告素材规则仍保留。
 
 # ============ ⑨ 随机子域广告 CDN（伪装域名，实抓确认）============
 DOMAIN-SUFFIX,comfylink.com,REJECT,extended-matching,pre-matching
