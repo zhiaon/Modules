@@ -1,0 +1,23 @@
+#!name=CF IP 优选工具
+#!desc=v3.7.2 · Cloudflare 官方 IP 段 · DIRECT 直连与 PROXY 代理双模式测速（代理模式按线路统计，目标地址不可核验）。扫描期间仅 speed.cloudflare.com 走固定地址并直连，结束恢复。
+#!version=3.7.2
+#!arguments=数量:100
+#!arguments-desc=候选数量（1–500），网页会以该值为默认；网页可直接改。其他参数在工作台调整。
+
+[Panel]
+CF IP 优选工具 = title="CF IP 优选工具",content="Cloudflare 官方 IP 段 · 逐 IP 实测",style=info,script-name=cfopt-panel,update-interval=5
+
+[Script]
+cfopt-dns = type=dns,script-path=https://raw.githubusercontent.com/zhiaon/Modules/main/surge_scripts/CFOptimizer-dns.js,script-update-interval=86400,engine=jsc,timeout=3
+cfopt-panel = type=generic,script-path=https://raw.githubusercontent.com/zhiaon/Modules/main/surge_scripts/CFOptimizer.js,script-update-interval=86400,engine=jsc,timeout=10,argument="{{{数量}}}"
+cfopt-page = type=http-request,pattern=^https?://cfoptimizer\.invalid/(?:\?.*)?$,script-path=https://raw.githubusercontent.com/zhiaon/Modules/main/surge_scripts/cfopt-page.js,script-update-interval=86400,engine=jsc,timeout=10,argument="{{{数量}}}"
+cfopt-local = type=http-request,pattern=^https?://cfoptimizer\.invalid/api/,requires-body=true,max-size=4096,script-path=https://raw.githubusercontent.com/zhiaon/Modules/main/surge_scripts/CFOptimizer.js,script-update-interval=86400,engine=jsc,timeout=90,argument="{{{数量}}}"
+
+[MITM]
+hostname = cfoptimizer.invalid
+
+[Host]
+speed.cloudflare.com = script:cfopt-dns
+
+[Rule]
+DOMAIN,speed.cloudflare.com,DIRECT
