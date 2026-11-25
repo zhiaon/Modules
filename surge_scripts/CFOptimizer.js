@@ -149,7 +149,7 @@ var CFEngine = (function () {
  const P=f=>new Promise(r=>f(r));
  const ARG=String(typeof $argument==='undefined'?'':$argument).split('|');
  const PARAM_COUNT=(function(){var n=parseInt(String(ARG[0]||'').trim(),10);return Number.isFinite(n)&&n>=1&&n<=500?n:10})();
- const read=()=>{try{const s=JSON.parse($persistentStore.read(KEY)||'{}');return s&&typeof s==='object'?s:{}}catch(_){return {}}};
+ const read=()=>{try{const s=JSON.parse($persistentStore.read(KEY)||'{}');if(!s||typeof s!=='object')return {};s.cfg=s.cfg||{};if(s.cfg.mode==='proxy'){s.status='stopped';s.running=false;s.queue=[];s.current=null;s.results=s.direct||[]}delete s.proxy;delete s.cfg.policy;s.cfg.mode='direct';return s}catch(_){return {}}};
  const save=s=>$persistentStore.write(JSON.stringify(s),KEY)!==false;
  const sleep=ms=>new Promise(r=>setTimeout(r,ms));
  const nowMs=()=>Date.now();
@@ -161,22 +161,22 @@ var CFEngine = (function () {
  async function directPeer(ip){return (await recs()).some(x=>hostOk(x)&&x.remoteAddress===ip)}
  async function pinIp(ip){if($persistentStore.write(ip,PIN)===false)throw Error('pin-store-failed');await api('POST','/v1/dns/flush');await sleep(180)}
  const clearPin=()=>{try{$persistentStore.write('none',PIN)}catch(_){}}
- async function probe(ip,cfg,mode,policy){
-  const r={ip:mode==='proxy'?'':ip,mode,policy:mode==='proxy'?policy:null,version:ip.indexOf(':')>=0?'IPv6':'IPv4',tries:0,ok:0,samples:[],avg:null,min:null,max:null,mbps:null,bytes:0,downloadMs:null,colo:null,verified:false,verify:'none',peer:null,status:'unavailable',reason:null,time:nowMs()};
-  const pol=mode==='proxy'?policy:'DIRECT';
+ async function probe(ip,cfg){
+  const r={ip,mode:'direct',policy:null,version:ip.indexOf(':')>=0?'IPv6':'IPv4',tries:0,ok:0,samples:[],avg:null,min:null,max:null,mbps:null,bytes:0,downloadMs:null,colo:null,verified:false,verify:'none',peer:null,status:'unavailable',reason:null,time:nowMs()};
+  const pol='DIRECT';
   for(let i=0;i<cfg.tries;i++){
    r.tries++;
    try{
-    if(mode==='direct')await pinIp(ip);
+    await pinIp(ip);
     const t0=nowMs();
     const t=await get('https://speed.cloudflare.com/cdn-cgi/trace',false,cfg.timeout,pol);
     if(t.status!==200)throw Error(t.err||('http-'+t.status));
     const list=await recs();
     const fresh=list.filter(x=>hostOk(x)&&(x.startDate||0)>=(t0/1000-1));
-    const hit=mode==='direct'?fresh.find(x=>x.remoteAddress===ip):fresh.sort((a,b)=>(b.startDate||0)-(a.startDate||0))[0];
-    if(mode==='direct'&&!hit)throw Error('peer-mismatch');
+    const hit=fresh.find(x=>x.remoteAddress===ip);
+    if(!hit)throw Error('peer-mismatch');
     r.peer=hit?hit.remoteAddress:null;r.policy=hit&&hit.policyName?hit.policyName:r.policy;
-    r.verified=mode==='direct';r.verify=mode==='direct'?'ip':'line';
+    r.verified=true;r.verify='ip';
     r.ok++;r.samples.push(t.ms);
     const c=/(?:^|\n)colo=([A-Z]{3})/.exec(String(t.data||''));if(c)r.colo=c[1];
     if(cfg.download&&r.mbps===null){
@@ -196,18 +196,14 @@ var CFEngine = (function () {
  function bestOf(a){return a.length?a.slice().sort(function(x,y){return x.avg-y.avg})[0]:null}
  function info(s){
   var d=(s.direct||[]).filter(function(x){return x.status==='ok'});
-  var p=(s.proxy||[]).filter(function(x){return x.status==='ok'});
-  var bd=bestOf(d),bp=bestOf(p);
+  var bd=bestOf(d);
   var done=s.done||0,total=s.total||0,st=s.status||'idle';
   var pct=total?Math.round(done/total*100):0;
   var cfg=s.cfg||{};
-  var mode=cfg.mode==='proxy'?('PROXY'+(cfg.policy?' · '+cfg.policy:'')):'DIRECT 直连';
+  var mode='DIRECT 直连';
   var out=[];
   out.push('━ 直连 ━ '+(d.length?('✅ '+d.length+' 可用'):'—'));
   if(bd)out.push('   最佳  '+bd.ip+'\n   '+fmtMs(bd.avg)+' ・ '+fmtSp(bd.mbps));
-  out.push('');
-  out.push('━ 代理 ━ '+(p.length?('✅ '+p.length+' 线路'):'—'));
-  if(bp)out.push('   最佳  '+(bp.policy||'')+'\n   '+fmtMs(bp.avg)+' ・ '+fmtSp(bp.mbps));
   out.push('');
   out.push((st==='running'?'⏳ 进行中':'🕒 '+st)+'   '+bar(done,total)+' '+done+'/'+total+' ('+pct+'%)');
   if(st==='running'&&s.current)out.push('   正在 '+s.current);
@@ -222,7 +218,7 @@ var CFEngine = (function () {
  const ORIGIN='http://cfoptimizer.invalid';
  const VER='3.7.2';
  if(typeof $request==='undefined'){
-  if(typeof $trigger!=='undefined'&&$trigger==='button')$notification.post('CF IP 优选工具','双模式测速','点击打开工作台，选择 DIRECT 或 PROXY 后点「开始优选」。不会后台自动测速。',{url:ORIGIN+'/?v='+VER});
+  if(typeof $trigger!=='undefined'&&$trigger==='button')$notification.post('CF IP 优选工具','DIRECT 直连测速','点击打开工作台后点「开始优选」。不会后台自动测速。',{url:ORIGIN+'/?v='+VER});
   const s=read();
   return $done({title:'CF IP 优选工具',content:info(s),style:'info'})
  }
@@ -231,32 +227,27 @@ var CFEngine = (function () {
   const path=(url.replace(/^https?:\/\/cfoptimizer\.invalid/,'')||'/').split('?')[0],method=$request.method,h={};Object.keys($request.headers||{}).forEach(k=>h[k.toLowerCase()]=$request.headers[k]);
   if(h.host&&h.host!==ORIGIN.slice(7))return reply(403,{error:'Host 不匹配：'+h.host,type:'host-mismatch',hint:'请用 '+ORIGIN.slice(7)+' 打开'});
   if(h.origin&&!/^https?:\/\/cfoptimizer\.invalid$/.test(h.origin))return reply(403,{error:'跨站请求被拒绝',type:'origin-rejected',origin:h.origin,target:'cfoptimizer.invalid',hint:'仅允许本机工作台自身发起的请求'});
-  let s=read();s.direct=s.direct||[];s.proxy=s.proxy||[];s.cfg=s.cfg||{};
+  let s=read();s.direct=s.direct||[];s.cfg=s.cfg||{};
   if(path==='/api/ping')return reply(200,{ok:true,ts:nowMs(),paramCount:PARAM_COUNT});
   if(path==='/api/state'&&method==='GET'){console.log('STATE param='+PARAM_COUNT+' raw='+String(typeof $argument==='undefined'?'none':$argument));s.paramCount=PARAM_COUNT;if(s.status==='running'&&(!s.lastTick||nowMs()-s.lastTick>120000)){s.status='stopped';s.error=s.error||'任务已超时停止';clearPin()}s.running=s.status==='running';if(!s.running){clearPin();s.cfg=s.cfg||{};s.cfg.count=PARAM_COUNT}return reply(200,s)}
-  if(path==='/api/policies'&&method==='GET'){
-   const r=await api('GET','/v1/policy_groups');const g=Object.keys(r||{}).filter(k=>Array.isArray(r[k])).sort();
-   return reply(200,{policies:g})
-  }
   if(method!=='POST'||h['x-cf-local']!=='1'||!['/api/start','/api/batch','/api/stop'].includes(path))return reply(403,{error:'请求被拒绝',type:method!=='POST'?'method-not-allowed':'missing-local-header',path,status:403,hint:'请从本机工作台页面操作'});
   const b=JSON.parse($request.body||'{}');
   if(path==='/api/start'){ console.log('START count='+b.count+' param='+PARAM_COUNT); if(s.status==='running'&&s.lastTick&&nowMs()-s.lastTick<15000)return reply(409,{error:'已有扫描在运行，请先停止或等它结束',type:'busy',status:409,hint:'等待进度或点停止后再开始'});
-   const cfg={mode:b.mode==='proxy'?'proxy':'direct',policy:String(b.policy||'').slice(0,64),count:num(b.count,PARAM_COUNT,1,500),tries:num(b.tries,2,1,3),timeout:num(b.timeout,5,1,8),download:b.download!==false,family:['v4','v6','both'].includes(b.family)?b.family:'both'};
-   if(cfg.mode==='proxy'&&!cfg.policy)return reply(400,{error:'PROXY 模式必须选择代理策略'});
+   const cfg={mode:'direct',count:num(b.count,PARAM_COUNT,1,500),tries:num(b.tries,2,1,3),timeout:num(b.timeout,5,1,8),download:b.download!==false,family:['v4','v6','both'].includes(b.family)?b.family:'both'};
    const ranges=await CFEngine.update(false);
-   const queue=CFEngine.candidates(ranges,{family:cfg.family,count:cfg.mode==='proxy'?1:cfg.count,seed:nowMs()+''});
-   s={cfg,updated:ranges.fetchedAt,source:ranges.source,queue,queueTotal:queue.length,direct:cfg.mode==='direct'?[]:s.direct,proxy:s.proxy,results:[],done:0,total:queue.length,status:'running',running:true,error:null,started:nowMs()};save(s);return reply(200,s)
+   const queue=CFEngine.candidates(ranges,{family:cfg.family,count:cfg.count,seed:nowMs()+''});
+   s={cfg,updated:ranges.fetchedAt,source:ranges.source,queue,queueTotal:queue.length,direct:[],results:[],done:0,total:queue.length,status:'running',running:true,error:null,started:nowMs()};save(s);return reply(200,s)
   }
   if(path==='/api/stop'){s.status='stopped';s.running=false;clearPin();save(s);return reply(200,s)}
   if(s.status!=='running'){s.running=false;clearPin();return reply(200,s)}
-  const cfg=s.cfg,t0=nowMs(),K=Math.max(1,Math.min(5,cfg.mode==='proxy'?1:cfg.count));
+  const cfg=s.cfg,t0=nowMs(),K=Math.max(1,Math.min(5,cfg.count));
   let n=0;
   while(s.queue.length&&nowMs()-t0<9000&&n<K){
    const ip=s.queue.shift();s.current=ip;s.lastTick=nowMs();save(s);
    try{
-    const res=await probe(ip,cfg,cfg.mode,cfg.policy);
-    if(cfg.mode==='proxy'){s.proxy=s.proxy.filter(x=>x.policy!==res.policy).concat(res)}else{s.direct.push(res)}
-    s.results=(cfg.mode==='proxy'?s.proxy:s.direct);
+    const res=await probe(ip,cfg);
+    s.direct.push(res);
+    s.results=s.direct;
    }catch(e){s.error=String(e.message||e).slice(0,80)}
    s.done=(s.done||0)+1;n++;s.lastTick=nowMs();
    save(s);

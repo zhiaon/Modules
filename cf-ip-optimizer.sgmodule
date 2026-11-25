@@ -1,5 +1,5 @@
 #!name=CF IP 优选工具
-#!desc=v3.7.2 · Cloudflare 官方 IP 段 · DIRECT 直连与 PROXY 代理双模式测速（代理模式按线路统计，目标地址不可核验）。扫描期间仅 speed.cloudflare.com 走固定地址并直连，结束恢复。
+#!desc=v3.7.2 · Cloudflare 官方 IP 段 · DIRECT 直连测速。扫描期间仅 speed.cloudflare.com 走固定地址并直连，结束恢复。
 #!version=3.7.2
 #!arguments=数量:100
 #!arguments-desc=候选数量（1–500），网页会以该值为默认；网页可直接改。其他参数在工作台调整。
