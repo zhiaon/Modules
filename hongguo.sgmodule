@@ -1,7 +1,7 @@
 #!name=红果短剧去广告
-#!desc=V1.3：移除第⑧段6条共享电商拦截，避免误伤抖音商城；保留红果专属、广告 SDK 与素材拦截。V1.2 新增红果专属广告域（hongguoapp / hongguosdk / hongguo.ad）、穿山甲 SDK 直连域（pangolin-sdk-toutiao、ad.pangolin.cn）、联盟 SDK 关键字 ad-union-sdk、字节兜底 be-pack 与 tnc.snssdk；刻意不写 zijieapi 整域拦截，避免连带 api5-normal 业务接口。纯域名层去广告，不需要 MITM 与证书。
+#!desc=V1.4：新增红果广告接口响应拦截（Map Local），针对正常业务域内的 /api/ad/ 请求返回空 JSON；需要 MITM。保留原有红果专属、广告 SDK、广告素材与埋点拦截规则。若红果存在证书固定导致加载异常，可恢复 V1.3。纯域名规则无法拦截接口内下发的广告。
 #!author=许舟
-#!version=1.3
+#!version=1.4
 #!category=去广告
 #!icon=https://is1-ssl.mzstatic.com/image/thumb/Purple221/v4/df/05/06/df050609-8be3-0daf-d35b-f29a143d0677/AppIcon-0-0-1x_U007emarketing-0-8-0-85-220.png/120x120bb.jpg
 #!openUrl=https://apps.apple.com/cn/app/id6451407032
@@ -183,3 +183,16 @@ activity-ag.awemeughun.com = 127.0.0.1
 # V1.2 新增：与 [Rule] 中 hongguoapp / hongguosdk / hongguo.ad 的 REJECT 一一对应
 hongguoapp.com = 127.0.0.1
 hongguosdk.com = 127.0.0.1
+
+# ============ ⑪ 接口内广告响应（需要 MITM）============
+# 红果自身 API 可能在正常业务域的 /api/ad/ 路径下返回广告配置。
+# 直接 REJECT 会触发 App 重试，因此返回合法空 JSON。
+[Map Local]
+^https:\/\/[^\/]*\.snssdk\.com\/api\/ad\/ data-type=text data="{}" status-code=200 header="Content-Type:application/json"
+^https:\/\/[^\/]*pangolin-sdk-toutiao[^\/]*\/api\/ad\/union\/sdk\/ data-type=text data="{}" status-code=200 header="Content-Type:application/json"
+
+# ============ ⑫ Map Local 所需 MITM ============
+# 仅为接口内广告响应提供路径级过滤；若红果证书固定导致加载异常，
+# 停用本模块或恢复 V1.3 备份即可回滚。
+[MITM]
+hostname = %APPEND% *.snssdk.com, *.pangolin-sdk-toutiao.com, *.pangolin-sdk-toutiao-b.com, *.pangolin-sdk-toutiao1.com
