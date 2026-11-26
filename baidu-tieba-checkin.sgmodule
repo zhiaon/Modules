@@ -1,0 +1,19 @@
+#!name=百度贴吧签到
+#!desc=百度贴吧每日签到｜远程脚本｜自动调度｜不上传账号信息
+#!openUrl=https://tieba.baidu.com
+#!author=Minis
+#!homepage=https://manual.nssurge.com/scripting/overview.html
+#!icon=https://tieba.baidu.com/favicon.ico
+#!arguments=auto_sign:true,auto_capture:true,sign_time:0 8 * * *
+#!arguments-desc=【auto_sign】\n是什么：控制百度贴吧是否按每日设定时间自动签到。\n怎么填：开启 true，关闭 false。\n· true（默认开启）\n· false（关闭自动签到，仍可手动签到）\n注意：关闭时每日Cron只触发一次本地开关检查，不请求贴吧；其他时间不运行签到任务。\n\n【auto_capture】\n是什么：控制是否捕获贴吧请求中的登录Cookie或登录响应下发的Cookie。\n怎么填：开启 true，关闭 false。\n· true（默认，仅匹配 tieba.baidu.com、passport.baidu.com）\n· false（不捕获，已有本地会话仍保留）\n注意：只接受 BDUSS、BDUSS_BFESS；HTTPS抓取需要贴吧和百度登录主机的MITM。每次成功捕获到完整会话（包括重复值）均通知；auto_capture=false时不捕获也不通知。\n\n【sign_time】\n是什么：每日签到唯一的Cron执行时间。\n怎么填：填五字段Cron“分 时 * * *”，仅支持每天一个明确分钟和小时。\n· 0 8 * * *（每天08:00，默认）\n· 30 7 * * *（每天07:30）\n注意：不要填非单一每日时间、范围或列表；只有此时触发签到检查，已签到不通知，新签到成功才通知。\n\n————\n\n整体备注：Cron只在指定时间运行一次，不做周期轮询；wake-system=true可请求iOS于该时刻唤醒Surge，但系统仍可能延迟。面板没有周期自动刷新。Cookie仅本地存储，不宣称加密。
+
+[Script]
+TB自动签到 = type=cron,cronexp="{{{sign_time}}}",wake-system=true,script-path=https://raw.githubusercontent.com/zhiaon/Modules/main/surge_scripts/tieba-daily.js,script-update-interval=86400,timeout=120,argument="auto|{{{auto_sign}}}|{{{auto_capture}}}|{{{sign_time}}}"
+TB立即签到 = type=generic,script-path=https://raw.githubusercontent.com/zhiaon/Modules/main/surge_scripts/tieba-daily.js,script-update-interval=86400,timeout=120,argument="manual|{{{auto_sign}}}|{{{auto_capture}}}|{{{sign_time}}}"
+TB绑定贴吧会话 = type=generic,script-path=https://raw.githubusercontent.com/zhiaon/Modules/main/surge_scripts/tieba-daily.js,script-update-interval=86400,timeout=10,argument="bind|{{{auto_sign}}}|{{{auto_capture}}}|{{{sign_time}}}"
+TB清除贴吧会话 = type=generic,script-path=https://raw.githubusercontent.com/zhiaon/Modules/main/surge_scripts/tieba-daily.js,script-update-interval=86400,timeout=10,argument="forget|{{{auto_sign}}}|{{{auto_capture}}}|{{{sign_time}}}"
+TB捕获贴吧Cookie = type=http-request,pattern=^https:\/\/(?:tieba|passport)\.baidu\.com(?:\/|\?|$),script-path=https://raw.githubusercontent.com/zhiaon/Modules/main/surge_scripts/tieba-daily.js,script-update-interval=86400,timeout=5,argument="capture|{{{auto_sign}}}|{{{auto_capture}}}|{{{sign_time}}}"
+TB响应抓取贴吧Cookie = type=http-response,pattern=^https:\/\/(?:tieba|passport)\.baidu\.com(?:\/|\?|$),script-path=https://raw.githubusercontent.com/zhiaon/Modules/main/surge_scripts/tieba-daily.js,script-update-interval=86400,full-header-mode=true,requires-body=false,timeout=5,argument="capture|{{{auto_sign}}}|{{{auto_capture}}}|{{{sign_time}}}"
+
+[MITM]
+hostname = %APPEND% tieba.baidu.com, passport.baidu.com
