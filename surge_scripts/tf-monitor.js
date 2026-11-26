@@ -1,7 +1,7 @@
-/* TestFlight public-page monitor. Surge JSC; no external dependencies. */
+/* TestFlight public-page monitor 1.0.1. Native cron; legacy argument compatibility. */
 (function () {
   'use strict';
-  var ended = false, active = 0, cursor = 0, jobs = [], interval = 5;
+  var ended = false, active = 0, cursor = 0, jobs = [], interval = 5, nativeSchedule = false;
   var run = String(Date.now()) + '-' + Math.random().toString(36).slice(2);
   function log(s) { console.log('[TF] ' + s); }
   function done() { if (!ended) { ended = true; $done(); } }
@@ -12,10 +12,15 @@
   }
   function inputs(raw) {
     raw = String(raw || '').trim();
+    nativeSchedule = raw.indexOf('schedule=native&') === 0;
+    if (nativeSchedule) { raw = raw.slice('schedule=native&'.length); }
     var prefix = /^interval_minutes=([^&]*)&tf_links=([\s\S]*)$/.exec(raw);
     var minutes = prefix ? prefix[1] : '5';
     interval = /^[1-9][0-9]{0,3}$/.test(minutes) && Number(minutes) <= 1440 ? Number(minutes) : 5;
     if (String(interval) !== minutes) { log('interval_minutes 无效，安全回退5分钟（合法整数1-1440）'); }
+    if (nativeSchedule && (!prefix || !/^[1-9][0-9]?$/.test(minutes) || Number(minutes) > 59)) {
+      log('原生调度参数无效；合法分钟数1-59，本轮不请求'); return [];
+    }
     raw = (prefix ? prefix[2] : raw).trim();
     if (!raw || raw === '-') { return []; }
     if (raw.length > 8192) { log('参数过长（上限8192字符），本轮不请求'); return []; }
@@ -128,7 +133,7 @@
     var r = read(c), now = Date.now();
     if (r.lock && now >= r.lock.at && now - r.lock.at < 20000) { log(c.code + ' 已有运行中任务'); return false; }
     if (r.lastAttemptAt > now) { log(c.code + ' 检测到时钟回退，重新建立检查基准'); }
-    else if (r.lastAttemptAt > 0 && now - r.lastAttemptAt < interval * 60000) { return false; }
+    else if (r.lastAttemptAt > 0 && now - r.lastAttemptAt < (nativeSchedule ? 20000 : interval * 60000)) { return false; }
     r.lock = {token:run,at:now}; r.lastAttemptAt = now;
     save(c,r);
     r = read(c);

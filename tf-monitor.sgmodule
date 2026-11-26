@@ -1,8 +1,8 @@
 #!name=TestFlight 多链接名额监控
-#!desc=仅GET公开邀请页；最多10个链接，独立去重，未知状态不通知，不自动报名。每分钟轻量调度，默认每5分钟网络检查，不强制唤醒。
-#!version=1.0.0
-#!arguments=tf_links:-,interval_minutes:5
-#!arguments-desc=【tf_links】\n是什么：要监控的公开 TestFlight 测试链接，最多10个。\n怎么填：多个完整链接用英文逗号 , 分隔；不要输入引号。\n· https://testflight.apple.com/join/Rspq3M2C,https://testflight.apple.com/join/JdsubPZs\n注意：- 表示停用；只接受8位字母数字代码，建议去掉查询和尾斜杠；不要添加名称、引号或其他配置文字。\n\n【interval_minutes】\n是什么：每个链接两次网络检查的最小间隔，单位分钟。\n怎么填：填写1至1440的十进制整数。\n· 默认5；10表示至少间隔10分钟。\n注意：无效值回退5；不唤醒时调度会延后，不能保证精确到点。\n\n————\n\n公开英文页面证据；每链接每轮最多1次请求，总并发2；首次开放或确定满员/关闭后重开才调用通知。系统通知是否显示不能由脚本确认。
+#!desc=原生按分钟步进触发，不再每分钟空跑。默认10分钟，每小时6次；多链接独立去重，不强制唤醒、不自动报名。
+#!version=1.0.1
+#!arguments=tf_links:-,interval_minutes:10
+#!arguments-desc=【tf_links】\n多个完整TF链接用英文逗号 , 分隔，最多10个；-表示不联网。不要添加名称、引号或配置文字。\n\n【interval_minutes】\n原生cron分钟步进，填写1至59的整数，默认10。推荐10、12、15、20、30：这些值能均分一小时。\n· 10表示每小时的00、10、20、30、40、50分触发。\n· 其他值按每小时从00分重新计数，例如40在00、40分触发，跨小时只隔20分钟；不是任意等间隔计时器。\n· 1至5每小时超过10次，仍可能出现Surge耗电警告；建议至少6，优先10。\n· 不再支持旧版60至1440；无效cron参数可能导致模块加载失败，请改为有效值。\n\n升级后若仍显示旧版5分钟，请把本参数改为10；必要时仅停用再启用本模块刷新。保存后等待下一个cron时间点，不立即执行。不强制唤醒，后台或锁屏可能延迟。首次开放或确定满员/关闭后重新开放才提醒。
 
 [Script]
-tf-monitor = type=cron, cronexp="* * * * *", script-path=https://raw.githubusercontent.com/zhiaon/Modules/main/surge_scripts/tf-monitor.js, script-update-interval=86400, engine=jsc, timeout=55, wake-system=false, argument="interval_minutes={{{interval_minutes}}}&tf_links={{{tf_links}}}"
+tf-monitor = type=cron, cronexp="*/{{{interval_minutes}}} * * * *", script-path=https://raw.githubusercontent.com/zhiaon/Modules/main/surge_scripts/tf-monitor.js, script-update-interval=86400, engine=jsc, timeout=55, wake-system=false, argument="schedule=native&interval_minutes={{{interval_minutes}}}&tf_links={{{tf_links}}}"
