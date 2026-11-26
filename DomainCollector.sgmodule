@@ -1,0 +1,19 @@
+#!name=Surge域名规则采集器
+#!desc=V0.1 本地 Rule Script 域名采集；管理入口 http://domain-collector.invalid/。无需 MITM。次数按60秒合并；无法覆盖IP直连、预匹配或更早终结的规则。请保持采集规则在普通规则最前；不会自动写入生成的分流规则。
+#!version=0.1.0
+#!category=本地工具
+
+[Rule]
+SCRIPT,DC采集,DIRECT
+DOMAIN,domain-collector.invalid,DIRECT
+
+[Script]
+DC采集 = type=rule, script-path=https://raw.githubusercontent.com/zhiaon/Modules/main/surge_scripts/domain-collector.js, script-update-interval=86400, timeout=1, engine=jsc
+DC管理 = type=http-request, pattern=^http:\/\/domain-collector\.invalid(?:\/[^#]*)?$, script-path=https://raw.githubusercontent.com/zhiaon/Modules/main/surge_scripts/domain-collector-manager.js, script-update-interval=86400, requires-body=true, max-size=131072, timeout=10, engine=jsc
+DC本机授权 = type=generic, script-path=https://raw.githubusercontent.com/zhiaon/Modules/main/surge_scripts/domain-collector-panel.js, script-update-interval=86400, timeout=5, engine=webview
+
+[Panel]
+DC本机管理 = title="Surge域名规则采集器",content="尚未开始 · 刷新查看采集摘要\n刷新后点通知进入管理页",style=info,script-name=DC本机授权,update-interval=300
+
+[Host]
+domain-collector.invalid = 127.0.0.1
