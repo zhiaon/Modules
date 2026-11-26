@@ -1,0 +1,8 @@
+#!name=TestFlight 多链接名额监控
+#!desc=仅GET公开邀请页；最多10个链接，独立去重，未知状态不通知，不自动报名。每分钟轻量调度，默认每5分钟网络检查，不强制唤醒。
+#!version=1.0.0
+#!arguments=tf_links:-,interval_minutes:5
+#!arguments-desc=【tf_links】\n是什么：要监控的公开 TestFlight 测试链接，最多10个。\n怎么填：多个完整链接用英文逗号 , 分隔；不要输入引号。\n· https://testflight.apple.com/join/Rspq3M2C,https://testflight.apple.com/join/JdsubPZs\n注意：- 表示停用；只接受8位字母数字代码，建议去掉查询和尾斜杠；不要添加名称、引号或其他配置文字。\n\n【interval_minutes】\n是什么：每个链接两次网络检查的最小间隔，单位分钟。\n怎么填：填写1至1440的十进制整数。\n· 默认5；10表示至少间隔10分钟。\n注意：无效值回退5；不唤醒时调度会延后，不能保证精确到点。\n\n————\n\n公开英文页面证据；每链接每轮最多1次请求，总并发2；首次开放或确定满员/关闭后重开才调用通知。系统通知是否显示不能由脚本确认。
+
+[Script]
+tf-monitor = type=cron, cronexp="* * * * *", script-path=https://raw.githubusercontent.com/zhiaon/Modules/main/surge_scripts/tf-monitor.js, script-update-interval=86400, engine=jsc, timeout=55, wake-system=false, argument="interval_minutes={{{interval_minutes}}}&tf_links={{{tf_links}}}"
