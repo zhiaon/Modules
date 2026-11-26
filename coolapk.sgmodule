@@ -1,0 +1,10 @@
+#!name=酷安去广告
+#!desc=V1.0 保守清理 api.coolapk.com 三个列表接口中明确标记 sponsorCard 的卡片；保留普通推荐/热帖/通用模板。全广告页和未知结构透传；仅合成回归，未验证当前 App、开屏或全部广告。
+#!version=1.0
+#!category=去广告
+
+[Script]
+酷安列表去广告 = type=http-response, pattern=^https:\/\/api\.coolapk\.com\/v6\/(?:main\/(?:dataList|indexV8)|page\/dataList)(?:\?[^#]*)?$, requires-body=true, max-size=2097152, full-header-mode=true, script-path=https://raw.githubusercontent.com/zhiaon/Modules/main/surge_scripts/coolapk-clean.js, script-update-interval=86400, timeout=10
+
+[MITM]
+hostname = %APPEND% api.coolapk.com
