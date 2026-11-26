@@ -1,0 +1,13 @@
+#!name=淘宝去广告
+#!desc=V1.0：保守净化开屏接口中的明确广告容器；关闭已有开屏控制字段并清空广告素材地址。保留商品、搜索、购物车、订单和支付数据；未知结构透传。需开启脚本与 MITM 并信任 Surge CA；尚未经当前淘宝 App 实流量验证。
+#!version=1.0
+#!author=Minis
+#!category=去广告
+
+# 仅匹配明确开屏 API；不清空首页配置，不拦通用商品视频和共享活动模板。
+# 不添加整域 REJECT、不修改证书、不访问 Cookie、不自动删除 App 缓存。
+[Script]
+TB开屏净化 = type=http-response,pattern=^https://guide-acs\.m\.taobao\.com/gw/mtop\.taobao\.wireless\.home\.splash\.awesome\.get(?:/|\?|$),requires-body=true,max-size=2097152,full-header-mode=true,timeout=10,script-path=https://raw.githubusercontent.com/zhiaon/Modules/main/surge_scripts/taobao-clean.js,script-update-interval=86400
+
+[MITM]
+hostname = %APPEND% guide-acs.m.taobao.com
