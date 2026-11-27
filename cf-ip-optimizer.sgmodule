@@ -1,8 +1,8 @@
 #!name=CF IP 优选工具
-#!desc=v3.7.2 · Cloudflare 官方 IP 段 · DIRECT 直连测速。扫描期间仅 speed.cloudflare.com 走固定地址并直连，结束恢复。
-#!version=3.7.2
+#!desc=Cloudflare 官方 IP 段优选：以 DIRECT 直连测速，扫描期间仅 speed.cloudflare.com 走固定地址并直连，结束后恢复；结果在网页工作台查看与调整。
+#!version=v3.7.3
 #!arguments=数量:100
-#!arguments-desc=候选数量（1–500），网页会以该值为默认；网页可直接改。其他参数在工作台调整。
+#!arguments-desc=【数量】\n功能说明：测速时参与的候选 IP 数量，决定扫描耗时与结果规模。\n配置方法：填写 1 到 500 的整数，默认 100；网页工作台会以此为默认值，也可在网页里直接改。\n取值示例：\n· 100 默认，兼顾速度与覆盖面\n· 50 更快出结果\n· 200 覆盖更广，耗时明显变长\n注意事项：数值越大扫描越久；填 0、负数或超过 500 不会被采用，请保持在有效范围内。\n\n————\n\n整体备注：\n· 数据来源：Cloudflare 官方公布的 IP 段与 speed.cloudflare.com 测速接口。\n· 执行方式：在网页工作台发起扫描，脚本按直连方式测速。\n· 异常处理：扫描结束后恢复原始路由，不长期改写规则。\n· 兼容性：扫描期间只有 speed.cloudflare.com 走固定地址并直连。
 
 [Panel]
 CF IP 优选工具 = title="CF IP 优选工具",content="Cloudflare 官方 IP 段 · 逐 IP 实测",style=info,script-name=cfopt-panel,update-interval=5

@@ -1,10 +1,10 @@
 #!name=汇率显示面板
-#!desc=V1.1：直接显示「1 单位外币等于多少基准货币」，如「1 USD（美元） = 6.6798 CNY」；小面值币种自动按 100 或 1000 单位显示，含数据更新时间。
+#!desc=汇率面板：显示 1 单位外币等于多少基准货币，小面值币种自动按 100 或 1000 单位显示，并标注数据更新时间。
 #!author=许舟
-#!version=1.1
+#!version=v1.1.1
 #!category=工具
 #!arguments=基准货币:CNY,目标货币:USD;EUR;GBP;JPY;HKD;TWD;KRW;SGD;THB;AUD;CAD;CHF;TRY;INR;MYR;IDR;PHP;NZD;AED;VND,请求节点:-
-#!arguments-desc=【基准货币】\n是什么：汇率换算的基准，面板显示 1 单位外币能换多少该基准币。\n怎么填：填三位 ISO 4217 货币代码。\n· CNY 人民币（默认）\n· USD 美元\n· EUR 欧元\n· HKD 港元 / TWD 新台币\n注意：目标货币列表会自动跳过与基准相同的代码。\n\n【目标货币】\n是什么：要对照显示的其他国家或地区货币。\n怎么填：填三位代码，用英文分号分隔。\n· 默认 20 种：USD;EUR;GBP;JPY;HKD;TWD;KRW;SGD;THB;AUD;CAD;CHF;TRY;INR;MYR;IDR;PHP;NZD;AED;VND\n· 只看几种：USD;JPY;HKD;TWD\n注意：最多 20 种；数据源不支持的币种显示暂无数据，不会显示成 0。\n\n【请求节点】\n是什么：查询汇率使用的策略。\n怎么填：\n· - 跟随当前规则（默认）\n· Proxy 通过代理组\n· DIRECT 直连\n注意：接口偶发连不上时可尝试切换策略排查。\n\n————\n\n数据来源 ExchangeRate-API 免费接口，无需 API Key，基准数据每日更新。\n小面值币种自动按 100 或 1000 单位显示，避免出现 0.00026 这类读不清的数字。\n面板每 6 小时刷新；网络失败时显示上次成功缓存，并标注失败原因。\n汇率仅供参考，实际兑换价格以银行或支付机构为准。
+#!arguments-desc=【基准货币】\n功能说明：汇率换算的基准，面板显示 1 单位外币能换多少该基准币。\n配置方法：填三位 ISO 4217 货币代码。\n取值示例：\n· CNY 人民币（默认）\n· USD 美元\n· EUR 欧元\n· HKD 港元 / TWD 新台币\n注意事项：目标货币列表会自动跳过与基准相同的代码。\n\n【目标货币】\n功能说明：要对照显示的其他国家或地区货币。\n配置方法：填三位代码，用英文分号分隔。\n取值示例：\n· 默认 20 种：USD;EUR;GBP;JPY;HKD;TWD;KRW;SGD;THB;AUD;CAD;CHF;TRY;INR;MYR;IDR;PHP;NZD;AED;VND\n· 只看几种：USD;JPY;HKD;TWD\n注意事项：最多 20 种；数据源不支持的币种显示暂无数据，不会显示成 0。\n\n【请求节点】\n功能说明：查询汇率使用的策略。\n配置方法：填 - 表示跟随当前规则，或填写策略组名、节点名。\n取值示例：\n· - 跟随当前规则（默认）\n· Proxy 通过代理组\n· DIRECT 直连\n注意事项：接口偶发连不上时可尝试切换策略排查。\n\n————\n\n整体备注：\n· 数据来源 ExchangeRate-API 免费接口，无需 API Key，基准数据每日更新。\n· 小面值币种自动按 100 或 1000 单位显示，避免出现 0.00026 这类读不清的数字。\n· 面板每 6 小时刷新；网络失败时显示上次成功缓存，并标注失败原因。\n· 汇率仅供参考，实际兑换价格以银行或支付机构为准。
 
 [Panel]
 汇率显示面板 = title="汇率显示面板",content="正在获取汇率…\n\n基准：CNY\n目标：USD / EUR / GBP / JPY / HKD / TWD 等",style=info,script-name=exchange-rates-panel,update-interval=21600

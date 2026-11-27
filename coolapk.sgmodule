@@ -1,6 +1,6 @@
 #!name=酷安去广告
-#!desc=V1.0 保守清理 api.coolapk.com 三个列表接口中明确标记 sponsorCard 的卡片；保留普通推荐/热帖/通用模板。全广告页和未知结构透传；仅合成回归，未验证当前 App、开屏或全部广告。
-#!version=1.0
+#!desc=清理酷安三个列表接口中明确标记为 sponsorCard 的推广卡片；普通推荐、热帖与未知结构原样放行，全广告页为避免分页异常保留原响应。
+#!version=v1.0.1
 #!category=去广告
 
 [Script]

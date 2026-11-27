@@ -1,10 +1,10 @@
 #!name=版本更新雷达
-#!desc=V1.0：监测 GitHub 仓库 Release 更新；首次静默建立基线，后续新版本通知并在面板显示。
+#!desc=版本更新雷达：监测指定 GitHub 仓库的 Release，首次静默建立基线，之后出现新版本才通知并在面板列出。
 #!author=许舟
-#!version=1.0
+#!version=v1.0.1
 #!category=工具
 #!arguments=仓库列表:-,测试版:false,通知:true,请求节点:-,GitHub令牌:-
-#!arguments-desc=【仓库列表】\n是什么：要跟踪 Release 的 GitHub 仓库。\n怎么填：格式 owner/repo，多个用英文分号分隔。\n· cli/cli\n· 弹幕=zhiaon/Danmaku-Studio\n· cli/cli;zhiaon/Danmaku-Studio\n注意：最多 12 个仓库；支持显示名=owner/repo，前面的名字只用于显示。\n\n【测试版】\n是什么：是否把预发布版本也纳入监测。\n怎么填：\n· false 只看稳定版（默认）\n· true 包含 pre-release 与 draft\n注意：开启后更新更频繁，通知也会相应变多。\n\n【通知】\n是什么：发现新版本后是否发系统通知。\n怎么填：\n· true 定时任务发现新版本时通知（默认）\n· false 只更新面板\n注意：面板刷新不重复通知，只有定时任务会推送。\n\n【请求节点】\n是什么：查询 GitHub Release 使用的策略。\n怎么填：\n· - 跟随当前规则（默认）\n· Proxy 通过代理组\n· DIRECT 直连\n注意：GitHub 直连不稳定时建议指定代理组。\n\n【GitHub令牌】\n是什么：访问私有仓库或提高 API 配额用的 Token。\n怎么填：\n· - 公开仓库留空即可（默认）\n· ghp_xxx 填写个人访问令牌\n注意：令牌只保存在模块参数中，不写入脚本、不显示在面板；公开仓库无需填写。\n\n————\n\n首次运行只建立当前版本基线，之后出现新版本才通知。\n面板每 2 小时刷新，定时任务每 2 小时检查一次，通知可点击直达 Release 页面。
+#!arguments-desc=【仓库列表】\n功能说明：要跟踪 Release 的 GitHub 仓库。\n配置方法：格式 owner/repo，多个用英文分号分隔。\n取值示例：\n· cli/cli\n· 弹幕=zhiaon/Danmaku-Studio\n· cli/cli;zhiaon/Danmaku-Studio\n注意事项：最多 12 个仓库；支持显示名=owner/repo，前面的名字只用于显示。\n\n【测试版】\n功能说明：是否把预发布版本也纳入监测。\n配置方法：填写 true 或 false，默认 true。\n取值示例：\n· false 只看稳定版（默认）\n· true 包含 pre-release 与 draft\n注意事项：开启后更新更频繁，通知也会相应变多。\n\n【通知】\n功能说明：发现新版本后是否发系统通知。\n配置方法：填写 true 或 false，默认 true。\n取值示例：\n· true 定时任务发现新版本时通知（默认）\n· false 只更新面板\n注意事项：面板刷新不重复通知，只有定时任务会推送。\n\n【请求节点】\n功能说明：查询 GitHub Release 使用的策略。\n配置方法：填 - 表示跟随当前规则，或填写策略组名、节点名。\n取值示例：\n· - 跟随当前规则（默认）\n· Proxy 通过代理组\n· DIRECT 直连\n注意事项：GitHub 直连不稳定时建议指定代理组。\n\n【GitHub令牌】\n功能说明：访问私有仓库或提高 API 配额用的 Token。\n配置方法：填 - 表示跟随当前规则，或填写策略组名、节点名。\n取值示例：\n· - 公开仓库留空即可（默认）\n· ghp_xxx 填写个人访问令牌\n注意事项：令牌只保存在模块参数中，不写入脚本、不显示在面板；公开仓库无需填写。\n\n————\n\n整体备注：\n· 首次运行只建立当前版本基线，之后出现新版本才通知。\n· 面板每 2 小时刷新，定时任务每 2 小时检查一次，通知可点击直达 Release 页面。
 
 [Panel]
 版本更新雷达 = title="版本更新雷达",content="尚未配置仓库\n\n打开模块 → 参数 → 仓库列表\n格式：owner/repo；owner/repo\n\n首次只记录版本，后续更新才通知",style=info,script-name=release-radar-panel,update-interval=7200

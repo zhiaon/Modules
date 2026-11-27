@@ -1,7 +1,7 @@
 #!name=DNS 清理缓存
-#!desc=V1.0 一键刷新 Surge DNS 缓存。卡片显示缓存条目数与上次刷新时间，点刷新按钮才执行 POST /v1/dns/flush，随后回读缓存条数核对，成功/未生效/失败都如实显示，不伪造状态。
+#!desc=一键刷新 Surge DNS 缓存：卡片显示缓存条目数与上次刷新时间，点击后执行刷新并回读条目数核对，成功、未生效或失败都如实显示。
 #!author=许舟
-#!version=1.0
+#!version=v1.0.1
 #!category=网络
 #!icon=arrow.triangle.2.circlepath
 

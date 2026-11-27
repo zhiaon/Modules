@@ -1,11 +1,11 @@
 #!name=双出口 IP 面板
 #!author=许舟
-#!version=1.1
-#!desc=V1.1 详细双出口面板：IP、IPv4/IPv6、国家/省市、运营商/组织、ASN、时区、查询来源、每路耗时与更新时间；点右上角刷新立即查询。
+#!version=v1.1.1
+#!desc=双出口面板：分别显示两路出口的 IP、IPv4/IPv6、国家省市、运营商、ASN、时区与每路查询耗时，右上角可立即刷新。
 #!category=网络
 #!system=ios
 #!arguments=policy:Proxy
-#!arguments-desc=【policy】\n是什么：要查询出口 IP 的策略组或节点。\n怎么填：填策略组名或节点名。\n· AUTO 自动读取 FINAL 策略（默认）\n· Proxy 指定策略组\n· DIRECT 查询直连出口\n注意：填写的名称必须是当前配置里真实存在的策略，否则查询失败。\n\n————\n\n面板显示 IP、IPv4/IPv6、国家省市、运营商/组织、ASN、时区、查询来源与每路耗时。\n点右上角刷新立即重新查询。
+#!arguments-desc=【policy】\n功能说明：要查询出口 IP 的策略组或节点。\n配置方法：填策略组名或节点名。\n取值示例：\n· AUTO 自动读取 FINAL 策略（默认）\n· Proxy 指定策略组\n· DIRECT 查询直连出口\n注意事项：填写的名称必须是当前配置里真实存在的策略，否则查询失败。\n\n————\n\n整体备注：\n· 面板显示 IP、IPv4/IPv6、国家省市、运营商/组织、ASN、时区、查询来源与每路耗时。\n· 点右上角刷新立即重新查询。
 
 [Panel]
 双出口 IP 面板 = title="双出口 IP · 详细",content="DIRECT 与代理出口等待查询…\n点右上角刷新按钮查询",style=info,script-name=双出口 IP 查询,update-interval=600

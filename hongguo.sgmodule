@@ -1,7 +1,7 @@
 #!name=红果短剧去广告
-#!desc=V1.4：新增红果广告接口响应拦截（Map Local），针对正常业务域内的 /api/ad/ 请求返回空 JSON；需要 MITM。保留原有红果专属、广告 SDK、广告素材与埋点拦截规则。若红果存在证书固定导致加载异常，可恢复 V1.3。纯域名规则无法拦截接口内下发的广告。
+#!desc=红果短剧去广告：域名与广告 SDK 规则，并对正常业务域内的 /api/ad/ 请求返回空 JSON。接口内下发的广告需该响应改写才能拦截，需开启 MITM；若遇证书固定导致异常可停用本模块。
 #!author=许舟
-#!version=1.4
+#!version=v1.4.1
 #!category=去广告
 #!icon=https://is1-ssl.mzstatic.com/image/thumb/Purple221/v4/df/05/06/df050609-8be3-0daf-d35b-f29a143d0677/AppIcon-0-0-1x_U007emarketing-0-8-0-85-220.png/120x120bb.jpg
 #!openUrl=https://apps.apple.com/cn/app/id6451407032

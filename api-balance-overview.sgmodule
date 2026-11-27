@@ -1,10 +1,10 @@
 #!name=API余额总览
-#!desc=V1.0：汇总 OpenAI/One API/New API 风格账户余额；支持低余额提醒和缓存展示。
+#!desc=汇总 OpenAI / One API / New API 风格账户的余额，面板显示各账户余额与更新时间，余额跌破阈值时通知。
 #!author=许舟
-#!version=1.0
+#!version=v1.0.1
 #!category=工具
 #!arguments=账户列表:-,通知:true,请求节点:-,低余额阈值:-
-#!arguments-desc=【账户列表】\n是什么：要汇总余额的 API 账户。\n怎么填：格式 名称~BaseURL~密钥~接口~倍率~货币，多个用英文分号分隔。\n· 中转站~https://api.example.com~sk-xxx~/api/user/self~100000~USD\n· 两个账户：账户A~https://a.com~sk-1~/api/user/self~100000~USD;账户B~https://b.com~sk-2~/api/user/self~1~CNY\n· - 留空表示尚未配置\n注意：最多 8 个账户；接口留空时默认 /api/user/self；密钥不会显示在面板。\n\n【通知】\n是什么：余额偏低时是否发系统通知。\n怎么填：\n· true 定时查询发现余额从阈值之上降到阈值之下时通知（默认）\n· false 只更新面板\n注意：首次查询低于阈值只建立基线，不会立刻误报。\n\n【请求节点】\n是什么：查询余额使用的策略。\n怎么填：\n· - 跟随当前规则（默认）\n· Proxy 通过代理组\n· DIRECT 直连\n注意：接口在内网或需要特定出口时，指定对应策略组。\n\n【低余额阈值】\n是什么：触发提醒的余额下限。\n怎么填：按账户货币填数字。\n· - 不发送低余额提醒（默认）\n· 5 低于 5 元提醒\n· 2.5 低于 2.5 元提醒\n注意：多账户货币不同时，阈值按各自货币理解。\n\n————\n\n倍率是接口 quota 单位换算成 1 元货币的数量，常见 One API / New API 填 100000。\n若服务端返回的 balance 已经是金额，倍率填 1。\n兼容 One API / New API 的 /api/user/self 结构，只读查询，不修改账户数据。
+#!arguments-desc=【账户列表】\n功能说明：要汇总余额的 API 账户。\n配置方法：格式 名称~BaseURL~密钥~接口~倍率~货币，多个用英文分号分隔。\n取值示例：\n· 中转站~https://api.example.com~sk-xxx~/api/user/self~100000~USD\n· 两个账户：账户A~https://a.com~sk-1~/api/user/self~100000~USD;账户B~https://b.com~sk-2~/api/user/self~1~CNY\n· - 留空表示尚未配置\n注意事项：最多 8 个账户；接口留空时默认 /api/user/self；密钥不会显示在面板。\n\n【通知】\n功能说明：余额偏低时是否发系统通知。\n配置方法：填写 true 或 false，默认 true。\n取值示例：\n· true 定时查询发现余额从阈值之上降到阈值之下时通知（默认）\n· false 只更新面板\n注意事项：首次查询低于阈值只建立基线，不会立刻误报。\n\n【请求节点】\n功能说明：查询余额使用的策略。\n配置方法：填 - 表示跟随当前规则，或填写策略组名、节点名。\n取值示例：\n· - 跟随当前规则（默认）\n· Proxy 通过代理组\n· DIRECT 直连\n注意事项：接口在内网或需要特定出口时，指定对应策略组。\n\n【低余额阈值】\n功能说明：触发提醒的余额下限。\n配置方法：按账户货币填数字。\n取值示例：\n· - 不发送低余额提醒（默认）\n· 5 低于 5 元提醒\n· 2.5 低于 2.5 元提醒\n注意事项：多账户货币不同时，阈值按各自货币理解。\n\n————\n\n整体备注：\n· 倍率是接口 quota 单位换算成 1 元货币的数量，常见 One API / New API 填 100000。\n· 若服务端返回的 balance 已经是金额，倍率填 1。\n· 兼容 One API / New API 的 /api/user/self 结构，只读查询，不修改账户数据。
 
 [Panel]
 API余额总览 = title="API余额总览",content="尚未配置 API 账户\n\n打开模块 → 参数 → 账户列表\n格式：名称~BaseURL~密钥~接口~倍率~货币\n首次成功只建立余额基线",style=info,script-name=api-balance-panel,update-interval=7200
