@@ -268,14 +268,14 @@ function create(env) {
         if(q.reason==='AUTH_DENIED')s.authBlockedFingerprint=MD5(JSON.stringify(a.capture));
         saveState(id,s);return q.reason;
       }
-      // A successful query is read-only. Advertised amounts and balance are NEVER rewards.
-      if(q.result.isallowcheckin===true && d.checkinAttempted!==true) {
+      // isallowcheckin is NOT a usable gate: the server has answered checkIn with
+      // retcode 0 and an actual bonus while the flag was false for the same account.
+      // The query is read-only and its amounts are never counted as rewards, so the
+      // only honest signal is the checkIn reply itself. Attempt once per day; a
+      // persisted attempt is never replayed the same day.
+      if(d.checkinAttempted!==true) {
         const r=await operate(id,a,s,'checkin',0);
         if(r.status!=='success'&&r.status!=='already')return r.reason;
-      } else if(d.checkin==='unobserved') {
-        d.checkin=q.result.isallowcheckin===false?'unavailable':'unknown';
-        d.reason=q.result.isallowcheckin===false?'CURRENTLY_UNAVAILABLE':'ELIGIBILITY_UNKNOWN';
-        saveState(id,s);
       }
       // Eligibility is re-evaluated next round; a persisted attempt is never replayed that day.
       if(d.videoBlocked||d.video==='pending')return d.reason;
@@ -308,7 +308,11 @@ function create(env) {
     let cursor=0;const results=[];
     async function worker(){while(cursor<ids.length&&!halted&&env.now()-started<BUDGET_MS){const id=ids[cursor++];results.push(await runAccount(id,c));}}
     await Promise.all([worker(),worker()]);
-    return {mode:'checkin',accounts:ids.length,processed:results.length,requests,statuses:results};
+    // Report check-in and video separately: the video gate used to overwrite the
+    // day reason, which made a successful check-in look like CURRENTLY_UNAVAILABLE.
+    let ch={},vd={};
+    try{const day=localDay(env.now());for(const id of ids){const d=((runtime(id).days)||{})[day]||{};const a=d.checkin||'unobserved',b=d.video||'unobserved';ch[a]=(ch[a]||0)+1;vd[b]=(vd[b]||0)+1;}}catch(_){ch={};vd={};}
+    return {mode:'checkin',accounts:ids.length,processed:results.length,requests,statuses:results,checkin:ch,video:vd};
   }
   async function summary() {
     const now=env.now(),d=new Date(now),date=localDay(now);
@@ -400,8 +404,9 @@ Promise.resolve().then(()=>{
   // One safe line per run so the result is visible without any credential.
   if(result.mode==='checkin') {
     const hist={}; for(const s of (result.statuses||[])) hist[s]=(hist[s]||0)+1;
+    const fmt=o=>Object.keys(o).sort().map(k=>k+'='+o[k]).join(',');
     console.log('PINGME_LOCAL checkin accounts='+result.accounts+' processed='+result.processed+
-      ' requests='+result.requests+' '+Object.keys(hist).sort().map(k=>k+'='+hist[k]).join(' '));
+      ' requests='+result.requests+' checkin['+fmt(result.checkin||{})+'] video['+fmt(result.video||{})+']');
   }
   if(result.mode==='summary')console.log('PINGME_LOCAL summary status='+result.status+
     (result.accounts===undefined?'':' accounts='+result.accounts));
