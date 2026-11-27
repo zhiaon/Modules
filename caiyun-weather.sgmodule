@@ -1,0 +1,30 @@
+#!name=彩云天气VIP解锁
+#!desc=彩云天气净化与会员解锁：拦截广告请求，清空首页活动与推荐位，改写会员接口返回长期 SVIP，为卫星云图与 48 小时预报请求补充鉴权头。
+#!version=v1.0.1
+#!category=解锁
+#!author=Minis (移植自 6otho/Loon_tool + chxm1023/Rewrite)
+#!homepage=https://github.com/6otho/Loon_tool
+
+[Rule]
+# 禁用行为上报，减少无用上行请求
+DOMAIN,gather.colorfulclouds.net,REJECT
+
+[Map Local]
+# 普通版广告请求：等价 Loon 的 reject-dict，直接回空 JSON
+^https:\/\/ad\.cyapi\.cn\/v2\/req\?app_name=weather data-type=base64 data="e30=" status-code=200 header="Content-Type:application/json"
+
+[Script]
+# 首页悬浮活动位
+彩云活动净化 = type=http-response,pattern=^https:\/\/(?:biz|wrapper|starplucker)\.(?:cyapi|caiyunapp)\.(?:cn|com)\/v\d\/activity\?app_name=weather,requires-body=1,max-size=1048576,timeout=30,script-update-interval=86400,script-path=https://raw.githubusercontent.com/zhiaon/Modules/main/surge_scripts/caiyun-weather-clean.js
+
+# 推荐位 / 亲友卡 / 试用卡 / 运营位 / 天气条件推广
+彩云广告净化 = type=http-response,pattern=^https:\/\/(?:biz|wrapper|starplucker)\.(?:cyapi|caiyunapp)\.(?:cn|com)\/(?:.+\/)?v\d\/(?:trial_card\/info|entries|friend_cards|operation|banners)|(?:banners|conditions)\?app_name=weather,requires-body=1,max-size=1048576,timeout=30,script-update-interval=86400,script-path=https://raw.githubusercontent.com/zhiaon/Modules/main/surge_scripts/caiyun-weather-clean.js
+
+# 会员信息（不含 entries / trial_card，避免与广告脚本重复改写）
+彩云会员解锁 = type=http-response,pattern=^https:\/\/(?:biz|wrapper|starplucker)\.(?:cyapi|caiyunapp)\.(?:cn|com)\/(?:v\d\/user\?app_name|.+\/v\d\/(?:vip_info|user_detail|user_info|privileges)),requires-body=1,max-size=1048576,timeout=30,script-update-interval=86400,script-path=https://raw.githubusercontent.com/zhiaon/Modules/main/surge_scripts/caiyun-weather-clean.js
+
+# 卫星云图 / 48 小时预报鉴权
+彩云云图鉴权 = type=http-request,pattern=^https:\/\/(?:api|wrapper)\.(?:cyapi|caiyunapp)\.(?:cn|com)\/v\d\/(?:satellite|nafp\/origin_images),timeout=30,script-update-interval=86400,script-path=https://raw.githubusercontent.com/zhiaon/Modules/main/surge_scripts/caiyun-weather-clean.js
+
+[MITM]
+hostname = %APPEND% *.cyapi.cn, *.caiyunapp.com
