@@ -206,7 +206,7 @@ function create(env) {
     try {
       const local=who.email.split('@')[0];
       const mask=(local.length>2?local.slice(0,2):local.slice(0,1))+'***';
-      env.notify('PingMe多账号签到',isNew?'已抓取新账号':'已更新账号',mask+' ['+who.id.slice(0,6)+']');
+      env.notify('多账号金币签到',isNew?'已抓取新账号':'已更新账号',mask+' ['+who.id.slice(0,6)+']');
     } catch(_) { /* a failed notice must never break or reopen the capture */ }
     // Do NOT walk the whole account tree here: each $persistentStore.read is a
     // synchronous disk access, and ~2500 of them per capture blew past the
@@ -351,7 +351,7 @@ function create(env) {
     const notifyTime=new Date(env.now());
     if(notifyTime.getHours()!==23||notifyTime.getMinutes()!==0||localDay(env.now())!==date)return {mode:'summary',status:'outside_window'};
     write('summary:'+date,{claimedAt:env.now(),cutoff,accounts:ids.length});
-    env.notify('多账号金币签到(本地)',date+' 截至23:00',body); // THE ONLY notification exit
+    env.notify('多账号金币签到',date+' 截至23:00',body); // THE ONLY notification exit
     return {mode:'summary',status:'sent',accounts:ids.length,confirmed:Number(total.toPrecision(15)),unknown};
   }
   async function run(arg,requestArg,responseArg) {
