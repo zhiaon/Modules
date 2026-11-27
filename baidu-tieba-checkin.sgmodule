@@ -1,6 +1,7 @@
 #!name=百度贴吧签到
 #!desc=百度贴吧每日签到：自动捕获登录 Cookie，按设定时间调度签到，账号信息仅保存在本机。
 #!version=v1.0.0
+#!category=工具
 #!openUrl=https://tieba.baidu.com
 #!author=Minis
 #!homepage=https://manual.nssurge.com/scripting/overview.html
