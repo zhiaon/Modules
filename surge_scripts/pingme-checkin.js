@@ -101,7 +101,7 @@ function parseResponse(r) {
   const msg=typeof b.retmsg==='string'?b.retmsg:'';
   if(b.retcode!==0) {
     if (/圖形驗證碼|验证码|captcha|watch|观看|觀看|上限|limit/i.test(msg)) return {status:'failed',reason:'SERVER_STOP'};
-    if (/已經簽過|已经签过|already/i.test(msg)) return {status:'already',reason:'ALREADY'};
+    if (/已經簽過|已经签过|已签过|已签到|已经签到|今日已签|重复签到|already/i.test(msg)) return {status:'already',reason:'ALREADY'};
     return {status:'failed',reason:'SERVER_DENIED'};
   }
   return {status:'success',reason:'OK',result:plain(b.result)?b.result:{}};
@@ -112,6 +112,7 @@ function reward(r) {
 }
 function create(env) {
   let halted=false, requests=0; const started=env.now();
+  let balances={}, fresh=[]; // per-run only, never persisted
   const token=String(started)+'-'+String(env.random());
   function read(k) { try { const x=env.read(NS+k); if(x===undefined) fail('STORE_READ'); return x; } catch(_){fail('STORE_READ');} }
   function obj(k) { const v=read(k); if(v===null||v==='') return null; try {return JSON.parse(v);}catch(_){fail('STORE_CORRUPT');} }
@@ -249,6 +250,7 @@ function create(env) {
     d[kind]=r.status; d.reason=r.reason;
     if(r.reason==='AUTH_DENIED')s.authBlockedFingerprint=MD5(JSON.stringify(a.capture));
     if(r.reason==='SERVER_STOP'||(kind==='video'&&(r.status==='unknown'||(r.status==='success'&&e.reward===null))))d.videoBlocked=true;
+    if(r.status==='success'&&e.reward!==null)fresh.push({id,kind,reward:e.reward});
     saveState(id,s);return r;
   }
   async function runAccount(id,c) {
@@ -263,6 +265,7 @@ function create(env) {
       if(s.lastAttemptAt!==null && env.now()-s.lastAttemptAt<(c.interval_hours===null?60000:c.interval_hours*3600000))return 'THROTTLED';
       s.lastAttemptAt=env.now();saveState(id,s);
       const q=await request(id,'queryBalanceAndBonus',a),d=dayState(s,localDay(env.now()));
+      if(q.status==='success'&&typeof q.result.balance==='number')balances[id]=q.result.balance;
       if(q.status!=='success') {
         d.reason=q.reason;
         if(q.reason==='AUTH_DENIED')s.authBlockedFingerprint=MD5(JSON.stringify(a.capture));
@@ -273,25 +276,21 @@ function create(env) {
       // The query is read-only and its amounts are never counted as rewards, so the
       // only honest signal is the checkIn reply itself. Attempt once per day; a
       // persisted attempt is never replayed the same day.
-      if(d.checkinAttempted!==true) {
+      // The cron interval decides the cadence: every run attempts a check-in for
+      // every account. Only an unresolved (pending) intent blocks a retry, because
+      // replaying an unknown outcome could double-claim.
+      const pendingCheckin=Object.keys(s.events).some(k=>{const e=s.events[k];return e.kind==='checkin'&&e.status==='pending';});
+      if(!pendingCheckin) {
         const r=await operate(id,a,s,'checkin',0);
-        if(r.status!=='success'&&r.status!=='already')return r.reason;
+        // A denied or already-done sign-in must not block the video part;
+        // only a hard server stop (captcha / limit) ends this account's run.
+        if(r.reason==='SERVER_STOP'||r.reason==='AUTH_DENIED'||r.status==='unknown')return r.reason;
       }
       // Eligibility is re-evaluated next round; a persisted attempt is never replayed that day.
       if(d.videoBlocked||d.video==='pending')return d.reason;
-      if(q.result.isallowvideobonus!==true) {
-        d.video=q.result.isallowvideobonus===false?'unavailable':'unknown';
-        d.reason=q.result.isallowvideobonus===false?'CURRENTLY_UNAVAILABLE':'ELIGIBILITY_UNKNOWN';
-        saveState(id,s);return d.reason;
-      }
       let lastVideoAt=null;
       for(let i=0;i<5;i++) {
         if(lastVideoAt!==null)await env.sleep(Math.max(0,GAP_MS-(env.now()-lastVideoAt)));
-        // Re-check the actual boolean before every video after the first; never use order/source.
-        if(i>0) {
-          const next=await request(id,'queryBalanceAndBonus',a);
-          if(next.status!=='success'||next.result.isallowvideobonus!==true){d.video='unavailable';d.reason=next.reason==='OK'?'CURRENTLY_UNAVAILABLE':next.reason;saveState(id,s);break;}
-        }
         lastVideoAt=env.now();
         const r=await operate(id,a,s,'video',i);
         if(r.status!=='success'||reward(r.result)===null)break;
@@ -310,9 +309,38 @@ function create(env) {
     await Promise.all([worker(),worker()]);
     // Report check-in and video separately: the video gate used to overwrite the
     // day reason, which made a successful check-in look like CURRENTLY_UNAVAILABLE.
-    let ch={},vd={};
-    try{const day=localDay(env.now());for(const id of ids){const d=((runtime(id).days)||{})[day]||{};const a=d.checkin||'unobserved',b=d.video||'unobserved';ch[a]=(ch[a]||0)+1;vd[b]=(vd[b]||0)+1;}}catch(_){ch={};vd={};}
-    return {mode:'checkin',accounts:ids.length,processed:results.length,requests,statuses:results,checkin:ch,video:vd};
+    let ch={},vd={},rows=[];
+    try{
+      const day=localDay(env.now());
+      for(let i=0;i<ids.length;i++){
+        const id=ids[i],a=account(id),s=runtime(id),d=(s.days||{})[day]||{};
+        const ci=d.checkin||'unobserved',vi=d.video||'unobserved';
+        ch[ci]=(ch[ci]||0)+1;vd[vi]=(vd[vi]||0)+1;
+        let cg=0,vg=0;
+        for(const k of Object.keys(s.events||{})){const e=s.events[k];
+          if(e.receivedDay!==day||e.status!=='success'||typeof e.reward!=='number')continue;
+          if(e.kind==='checkin')cg+=e.reward;else vg+=e.reward;}
+        rows.push({_id:id,n:i+1,mask:a.email.split('@')[0].slice(0,2)+'***',
+          bal:typeof balances[id]==='number'?balances[id]:null,checkin:ci,cg:cg,video:vi,vg:vg});
+      }
+    }catch(_){ch={};vd={};rows=[];}
+    // Notify only for gains confirmed in THIS run, one message for the whole run.
+    try{
+      if(fresh.length){
+        const by={};for(const f of fresh){const r=by[f.id]||(by[f.id]={c:0,cn:0,v:0,vn:0});if(f.kind==='checkin'){r.c+=f.reward;r.cn++;}else{r.v+=f.reward;r.vn++;}}
+        const fmt=n=>String(Number(n.toPrecision(15)));
+        const lines=[];let tc=0,tv=0;
+        for(const row of rows){const g=by[row._id]||null;if(!g)continue;
+          tc+=g.c;tv+=g.v;
+          const bits=[];if(g.cn)bits.push('签到 +'+fmt(g.c));if(g.vn)bits.push('视频 +'+fmt(g.v));
+          lines.push(row.mask+'：'+bits.join('，'));}
+        if(!lines.length)for(const id of Object.keys(by)){const g=by[id];tc+=g.c;tv+=g.v;lines.push('账号：'+(g.cn?'签到 +'+fmt(g.c)+' ':'')+(g.vn?'视频 +'+fmt(g.v):''));}
+        env.notify('PingMe多账号签到','签到成功 '+fresh.length+' 项',
+          lines.join('\n')+'\n合计 +'+fmt(tc+tv)+' Coins（签到 '+fmt(tc)+'，视频 '+fmt(tv)+'）');
+      }
+    }catch(_){}
+    for(const row of rows)delete row._id;
+    return {mode:'checkin',accounts:ids.length,processed:results.length,requests,statuses:results,checkin:ch,video:vd,rows:rows,fresh:fresh.length};
   }
   async function summary() {
     const now=env.now(),d=new Date(now),date=localDay(now);
@@ -403,10 +431,16 @@ Promise.resolve().then(()=>{
   if(result.mode==='migrate'||result.mode==='status')console.log('PINGME_LOCAL '+result.mode+' accounts='+result.accounts+' imported='+(result.imported||0));
   // One safe line per run so the result is visible without any credential.
   if(result.mode==='checkin') {
-    const hist={}; for(const s of (result.statuses||[])) hist[s]=(hist[s]||0)+1;
     const fmt=o=>Object.keys(o).sort().map(k=>k+'='+o[k]).join(',');
+    const rows=result.rows||[];
+    const sum=k=>rows.reduce((a,r)=>a+(r[k]||0),0);
+    const bal=rows.filter(r=>r.bal!==null).reduce((a,r)=>a+r.bal,0);
     console.log('PINGME_LOCAL checkin accounts='+result.accounts+' processed='+result.processed+
-      ' requests='+result.requests+' checkin['+fmt(result.checkin||{})+'] video['+fmt(result.video||{})+']');
+      ' requests='+result.requests+' balance='+Number(bal.toPrecision(15))+
+      ' checkin['+fmt(result.checkin||{})+'] checkinGain='+Number(sum('cg').toPrecision(15))+
+      ' video['+fmt(result.video||{})+'] videoGain='+Number(sum('vg').toPrecision(15)));
+    for(const r of rows)console.log('PINGME_LOCAL acct='+r.n+' '+r.mask+' balance='+(r.bal===null?'unknown':r.bal)+
+      ' checkin='+r.checkin+' +'+r.cg+' video='+r.video+' +'+r.vg);
   }
   if(result.mode==='summary')console.log('PINGME_LOCAL summary status='+result.status+
     (result.accounts===undefined?'':' accounts='+result.accounts));
