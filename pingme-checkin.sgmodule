@@ -1,0 +1,16 @@
+#!name=多账号金币签到
+#!version=v1.0.7
+#!desc=按设定定时批量签到并领取视频奖励，抓取账号后多账号自动执行；每天 23:00 汇总各账号当日已确认金币。
+#!arguments=cron:15 */2 * * *,policy:Proxy,capture:true
+#!arguments-desc=【cron】\n功能说明：签到与视频奖励任务的执行时间，默认每两小时第 15 分钟执行一次。\n配置方法：填写五段 cron（分 时 日 月 周），字段之间用空格分隔，不加引号；默认 15 */2 * * *。\n取值示例：\n· 15 */2 * * *：每两小时的第 15 分钟执行（默认）\n· 0 8 * * *：每天 08:00 执行一次\n· 30 9,21 * * *：每天 09:30 与 21:30 各执行一次\n· */30 * * * *：每 30 分钟执行一次\n注意事项：只影响签到与视频任务，23:00 汇总使用独立固定定时，不受这里改动影响；间隔过密不会增加收益，服务端资格不足时脚本只查询不领取。\n\n【policy】\n功能说明：api.pingmeapp.net 的流量策略，决定 App 与脚本的请求走哪个策略组，默认 Proxy。\n配置方法：填写本机已存在且名称完全相同的策略组或策略名，区分大小写与字符。\n取值示例：\n· Proxy：走现有 Proxy 策略组（默认）\n· DIRECT：直连，不经代理\n· 节点名称：填写本机实际的策略组全名，如自建组名\n注意事项：名称写错会导致该域名无匹配策略；只影响 api.pingmeapp.net，不会改变组内当前选中的节点，也不会影响其他域名。\n\n【capture】\n功能说明：抓取并保存账号的开关，默认 true；抓取成功同时发一条通知，抓取与通知共用这一个开关。\n配置方法：只填 true 或 false，小写；默认 true。\n取值示例：\n· true：登录账号后打开一次金币页即保存账号，并收到「已抓取新账号」或「已更新账号」通知（默认）\n· false：既不抓取也不通知，已存账号仍按 cron 签到，23:00 汇总照常\n注意事项：开启时每次保存都会通知，反复刷新金币页会连续收到多条；抓够账号后改为 false 即可停止。填入其他值会让抓取直接停止。\n\n————\n\n整体备注：\n· 数据来源：api.pingmeapp.net 的余额、签到与视频奖励接口\n· 刷新机制：签到按 cron 触发，每日 23:00 固定汇总一次\n· 执行方式：Surge 定时任务与 http-response 捕获脚本按需触发\n· 异常处理：网络或回执异常只记录状态，不重放有副作用的请求；资格不足时只查询不领取\n· 隐私安全：账号凭据仅存于本机 Surge 存储，通知只显示脱敏账号，不含完整邮箱与认证参数\n· 兼容性：需开启 MITM 并信任证书；仅适用于 iOS Surge\n
+
+[Script]
+多账号金币捕获 = type=http-response,pattern=^https:\/\/api\.pingmeapp\.net\/app\/queryBalanceAndBonus\?[^#]+$,requires-body=true,max-size=65536,script-path=https://raw.githubusercontent.com/zhiaon/Modules/main/surge_scripts/pingme-checkin.js,argument="mode=capture&capture={{{capture}}}",timeout=60,script-update-interval=86400
+多账号金币执行 = type=cron,cronexp="{{{cron}}}",script-path=https://raw.githubusercontent.com/zhiaon/Modules/main/surge_scripts/pingme-checkin.js,argument="mode=checkin",timeout=600,wake-system=1,script-update-interval=86400
+多账号金币汇总 = type=cron,cronexp="0 23 * * *",script-path=https://raw.githubusercontent.com/zhiaon/Modules/main/surge_scripts/pingme-checkin.js,argument="mode=summary",timeout=600,wake-system=1,script-update-interval=86400
+
+[Rule]
+DOMAIN,api.pingmeapp.net,{{{policy}}}
+
+[MITM]
+hostname = %APPEND% api.pingmeapp.net
