@@ -397,6 +397,14 @@ Promise.resolve().then(()=>{
 }).then(result=>{
   // Only safe enum values and counts; never stringify API replies, credentials or URLs.
   if(result.mode==='migrate'||result.mode==='status')console.log('PINGME_LOCAL '+result.mode+' accounts='+result.accounts+' imported='+(result.imported||0));
+  // One safe line per run so the result is visible without any credential.
+  if(result.mode==='checkin') {
+    const hist={}; for(const s of (result.statuses||[])) hist[s]=(hist[s]||0)+1;
+    console.log('PINGME_LOCAL checkin accounts='+result.accounts+' processed='+result.processed+
+      ' requests='+result.requests+' '+Object.keys(hist).sort().map(k=>k+'='+hist[k]).join(' '));
+  }
+  if(result.mode==='summary')console.log('PINGME_LOCAL summary status='+result.status+
+    (result.accounts===undefined?'':' accounts='+result.accounts));
   if(result.mode==='capture'&&result.status!=='disabled')captureDiagnostic(result.status,result.reason);
   done();
 },error=>{
