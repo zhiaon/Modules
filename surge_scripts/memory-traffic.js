@@ -2,80 +2,142 @@
 (function () {
     'use strict';
 
+    var policyCacheKey = 'zhiaon.memory-traffic.policy.v1';
+    var policyGenerationKey = policyCacheKey + '.generation';
+    var policyCacheTtl = 5 * 60 * 1000;
+    if ((typeof $event !== 'undefined' && $event
+            && ($event.name === 'profile-reloaded' || $event.name === 'engine-started'))
+            || (typeof $argument !== 'undefined' && $argument === 'invalidate-policy-cache')) {
+        // Use a new marker so an in-flight discovery cannot restore the old entry.
+        writeCache(policyGenerationKey, Date.now() + ':' + Math.random());
+        $done();
+        return;
+    }
+
     var title = '内存流量Tailscale实时监控';
     var iosReference = 50 * 1024 * 1024;
-    var panels = { performance: null, traffic: null, status: null, tunnel: null };
+    var panels = {}, errors = {}, tunnelPhase = '策略识别';
     var pending = 4, closed = false, requestId = 0;
     var deadline = setTimeout(render, 7000);
 
+    function isObject(value) {
+        return value !== null && typeof value === 'object' && !Array.isArray(value);
+    }
+
+    function decodeReply(reply, parse) {
+        if (reply == null || reply === '') return { error: '无响应' };
+        try {
+            var rpc = typeof reply === 'string' ? JSON.parse(reply) : reply;
+            if (isObject(rpc)) {
+                if (rpc.error) return { error: Number(rpc.error.code) === -32601 ? '接口不支持' : '读取失败' };
+                var result = rpc.result;
+                if (isObject(result)) {
+                    if (result.isError) return { error: '读取失败' };
+                    var value = result.structuredContent;
+                    if (value == null && Array.isArray(result.content)) {
+                        var text = result.content.filter(function (item) {
+                            return item && item.type === 'text' && typeof item.text === 'string';
+                        }).map(function (item) { return item.text; }).join('\n');
+                        if (text.trim()) value = parse ? JSON.parse(text) : text;
+                    }
+                    if (isObject(value) || (!parse && typeof value === 'string' && value.trim())) {
+                        return { value: value };
+                    }
+                }
+            }
+        } catch (_) {}
+        return { error: '响应格式异常' };
+    }
+
     function call(tool, args, parse, cb) {
         var answered = false;
-        function complete(value) {
+        function complete(value, error) {
             if (answered || closed) return;
             answered = true;
-            cb(value);
+            cb(value, error);
         }
         try {
             $httpAPI('POST', '/v1/mcp', {
                 jsonrpc: '2.0', id: ++requestId, method: 'tools/call',
                 params: { name: tool, arguments: args }
             }, function (reply) {
-                if (closed) return;
-                var value = null;
-                try {
-                    var rpc = typeof reply === 'string' ? JSON.parse(reply) : reply;
-                    var result = rpc && !rpc.error && rpc.result;
-                    if (result && !result.isError) {
-                        if (result.structuredContent) {
-                            value = result.structuredContent;
-                        } else {
-                            var text = (result.content || []).filter(function (item) {
-                                return item && item.type === 'text' && typeof item.text === 'string';
-                            }).map(function (item) { return item.text; }).join('\n');
-                            if (text) value = parse ? JSON.parse(text) : text;
-                        }
-                    }
-                } catch (_) {}
-                complete(value);
+                if (closed || answered) return;
+                var decoded = decodeReply(reply, parse);
+                complete(decoded.value, decoded.error);
             });
-        } catch (_) { complete(null); }
+        } catch (_) { complete(null, '读取失败'); }
     }
 
-    function setPanel(section, value) {
-        if (closed) return;
+    function setPanel(section, value, error) {
+        if (closed || Object.prototype.hasOwnProperty.call(panels, section)) return;
         panels[section] = value;
+        if (error) errors[section] = error;
         if (--pending === 0) render();
+    }
+
+    function readCache(key) {
+        try { return $persistentStore.read(key) || ''; } catch (_) { return ''; }
+    }
+
+    function writeCache(key, value) {
+        try { $persistentStore.write(value, key); } catch (_) {}
     }
 
     function profilePolicy(value) {
         var text = typeof value === 'string' ? value : value && value.profile;
         if (typeof text !== 'string') return null;
-        var lines = text.split(/\r?\n/), inProxy = false;
+        var lines = text.split(/\r?\n/), inProxy = false, recognized = false;
         for (var i = 0; i < lines.length; i++) {
             var line = lines[i].replace(/^\uFEFF/, '').trim();
             var section = line.match(/^\[([^\]]+)\]/);
             if (section) {
                 if (inProxy) break;
-                inProxy = section[1].toLowerCase() === 'proxy';
+                var name = section[1].trim().toLowerCase();
+                inProxy = name === 'proxy';
+                if (inProxy || name === 'general' || name === 'rule') recognized = true;
                 continue;
             }
             if (!inProxy || /^(?:#|;|\/\/)/.test(line)) continue;
             var match = line.match(/^([^=]+?)\s*=\s*tailscale\s*(?:[,;#]|\/\/|$)/i);
-            if (match) return match[1].trim().replace(/^(["'])(.*)\1$/, '$2') || '';
+            if (match) {
+                var policy = match[1].trim().replace(/^(["'])(.*)\1$/, '$2');
+                if (policy) return policy;
+            }
         }
-        return '';
+        return recognized ? '' : null;
     }
 
     function loadTunnel() {
-        call('get_profile', { variant: 'effective' }, false, function (profile) {
+        var generation = readCache(policyGenerationKey);
+        var cached, now = Date.now();
+        try { cached = JSON.parse(readCache(policyCacheKey)); } catch (_) {}
+        if (isObject(cached) && cached.generation === generation && typeof cached.policy === 'string'
+                && Number.isFinite(cached.at) && cached.at <= now && now - cached.at < policyCacheTtl) {
+            return loadTunnelStatus(cached.policy, generation);
+        }
+        call('get_profile', { variant: 'effective' }, false, function (profile, error) {
+            if (error) return setPanel('tunnel', null, '策略识别' + error);
             var policy = profilePolicy(profile);
-            if (policy === null) return setPanel('tunnel', { note: '策略读取失败' });
-            if (!policy) return setPanel('tunnel', { note: '当前配置未设置 Tailscale 策略' });
-            call('get_proxy_runtime_status', { policy: policy }, true, function (runtime) {
-                var ts = runtime && runtime.tailscale;
-                setPanel('tunnel', ts && typeof ts === 'object'
-                    ? { data: ts } : { note: '策略运行状态暂不可用' });
-            });
+            if (policy === null) return setPanel('tunnel', null, '策略识别响应格式异常');
+            if (readCache(policyGenerationKey) !== generation) {
+                return setPanel('tunnel', null, '配置已更新，等待下次刷新');
+            }
+            // Persist only the policy name (or a confirmed absence), never the profile text.
+            writeCache(policyCacheKey, JSON.stringify({ generation: generation, at: Date.now(), policy: policy }));
+            loadTunnelStatus(policy, generation);
+        });
+    }
+
+    function loadTunnelStatus(policy, generation) {
+        if (!policy) return setPanel('tunnel', { note: '当前配置未设置 Tailscale 策略' });
+        tunnelPhase = '运行状态';
+        call('get_proxy_runtime_status', { policy: policy }, true, function (runtime, error) {
+            if (readCache(policyGenerationKey) !== generation) {
+                return setPanel('tunnel', null, '配置已更新，等待下次刷新');
+            }
+            if (error) return setPanel('tunnel', null, '运行状态' + error);
+            if (!isObject(runtime.tailscale)) return setPanel('tunnel', null, '策略运行状态暂不可用');
+            setPanel('tunnel', { data: runtime.tailscale });
         });
     }
 
@@ -100,17 +162,23 @@
             + (hours || days || minutes ? minutes + ' 分钟' : seconds % 60 + ' 秒');
     }
 
-    function interfaceTotal(traffic, direction) {
+    function interfaceTotal(traffic, field) {
         var counters = traffic && traffic.interface;
-        if (!counters || typeof counters !== 'object') return null;
-        var total = null;
-        Object.keys(counters).forEach(function (name) {
-            if (/^lo\d*$/i.test(name)) return;
-            var row = counters[name];
-            var count = row ? number(row[direction]) : null;
-            if (count !== null) total = (total === null ? 0 : total) + count;
-        });
+        if (!isObject(counters)) return null;
+        var names = Object.keys(counters).filter(function (name) { return !/^lo\d*$/i.test(name); });
+        if (!names.length) return null;
+        var total = 0;
+        for (var i = 0; i < names.length; i++) {
+            var row = counters[names[i]];
+            var value = isObject(row) ? number(row[field]) : null;
+            if (value === null) return null;
+            total += value;
+        }
         return number(total);
+    }
+
+    function speed(value) {
+        return value === null ? '—' : size(value) + '/s';
     }
 
     function label(value, limit) {
@@ -150,11 +218,13 @@
             info.push(region(peer.derpRegionCode, peer.derpRegionCode ? null : peer.derpRegionID));
         }
         var latency = number(peer.latencyMs);
-        if (!(latency > 0) && kind === '中继') {
+        if (latency > 0) {
+            info.push(Math.round(latency) + ' ms');
+        } else if (kind === '中继' && number(peer.derpRegionID) > 0) {
             var map = ts.netcheck && ts.netcheck.regionLatencyMs;
-            latency = map && number(map[String(peer.derpRegionID)]);
+            var probe = map && number(map[String(peer.derpRegionID)]);
+            if (probe > 0) info.push('DERP 探测 ' + Math.round(probe) + ' ms');
         }
-        if (latency > 0) info.push(Math.round(latency) + ' ms');
         return info.join(' · ');
     }
 
@@ -203,6 +273,11 @@
         return lines;
     }
 
+    function issue(section, incomplete) {
+        if (!Object.prototype.hasOwnProperty.call(panels, section)) return '读取超时';
+        return errors[section] || (incomplete ? '数据缺失' : '');
+    }
+
     function render() {
         if (closed) return;
         closed = true;
@@ -210,26 +285,46 @@
         var perf = panels.performance || {}, status = panels.status || {};
         var memory = number(perf['memory-bytes']), uptime = number(perf.uptime);
         var down = interfaceTotal(panels.traffic, 'in'), up = interfaceTotal(panels.traffic, 'out');
-        var hasStats = [memory, uptime, down, up].some(function (n) { return n !== null; });
+        var downSpeed = interfaceTotal(panels.traffic, 'inCurrentSpeed');
+        var upSpeed = interfaceTotal(panels.traffic, 'outCurrentSpeed');
+        var hasStats = [memory, uptime, down, up, downSpeed, upSpeed].some(function (n) { return n !== null; });
         var used = memory !== null && label(status.system).toLowerCase() === 'ios'
             ? Math.min(10, Math.round(10 * memory / iosReference)) : null;
         var bar = used === null ? '' : '  ' + '▮'.repeat(used) + '▯'.repeat(10 - used);
         var lines = [
             '内存：' + size(memory) + bar,
             '运行：' + duration(uptime),
-            '累计：↓ ' + size(down) + '  ↑ ' + size(up)
+            '速率：↓ ' + speed(downSpeed) + '  ↑ ' + speed(upSpeed),
+            '接口累计：↓ ' + size(down) + '  ↑ ' + size(up)
         ];
-        if (!hasStats) lines.push('指标不可用 · 请检查 Surge MCP 是否已开启');
-        lines = lines.concat('', tunnelLines(panels.tunnel));
+        var performanceIssue = issue('performance', memory === null || uptime === null);
+        var trafficIssue = issue('traffic', [down, up, downSpeed, upSpeed].some(function (n) { return n === null; }));
+        if (performanceIssue) lines.push('性能：' + performanceIssue);
+        if (trafficIssue) lines.push('流量：' + trafficIssue);
+        if (!hasStats && errors.performance === '无响应' && errors.traffic === '无响应') {
+            lines.push('请检查 Surge MCP 是否已开启');
+        }
+        var tunnelIssue = Object.prototype.hasOwnProperty.call(panels, 'tunnel')
+            ? errors.tunnel : tunnelPhase + '超时';
+        lines = lines.concat('', tunnelLines(tunnelIssue ? { note: tunnelIssue } : panels.tunnel));
         var version = label(status.version), build = label(status.build);
-        if (version) lines.push('', 'Surge ' + version + (build ? ' · Build ' + build : ''));
+        var statusIssue = issue('status', !version);
+        if (version || statusIssue) lines.push('');
+        if (version) lines.push('Surge ' + version + (build ? ' · Build ' + build : ''));
+        if (statusIssue) lines.push('版本：' + statusIssue);
+        var partial = performanceIssue || trafficIssue || statusIssue || tunnelIssue;
         $done({ title: title, content: lines.join('\n'),
-            style: hasStats ? 'info' : 'error', icon: hasStats ? 'speedometer' : 'exclamationmark.triangle.fill',
-            'icon-color': hasStats ? '#4A90E2' : '#FF3B30' });
+            style: hasStats ? 'info' : 'error',
+            icon: partial || !hasStats ? 'exclamationmark.triangle.fill' : 'speedometer',
+            'icon-color': !hasStats ? '#FF3B30' : partial ? '#FF9500' : '#4A90E2' });
     }
 
-    call('dump_runtime_data', { type: 'performance' }, true, function (data) { setPanel('performance', data); });
-    call('dump_runtime_data', { type: 'traffic' }, true, function (data) { setPanel('traffic', data); });
-    call('get_status', {}, true, function (data) { setPanel('status', data); });
+    call('dump_runtime_data', { type: 'performance' }, true, function (data, error) {
+        setPanel('performance', data, error);
+    });
+    call('dump_runtime_data', { type: 'traffic' }, true, function (data, error) {
+        setPanel('traffic', data, error);
+    });
+    call('get_status', {}, true, function (data, error) { setPanel('status', data, error); });
     loadTunnel();
 })();

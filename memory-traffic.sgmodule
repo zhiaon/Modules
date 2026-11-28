@@ -1,15 +1,19 @@
 #!name=内存流量Tailscale实时监控
-#!desc=显示 Surge 内存、运行时长、接口累计上传与下载，并自动识别 Tailscale 策略，展示出口、DERP、TCP/UDP 连接及在线设备。数据由 Surge 内置 MCP 只读取得，无需填写端口或密钥。
+#!desc=显示 Surge 内存、运行时长、接口实时上下行速率和累计流量，自动识别 Tailscale 策略并展示出口、DERP、TCP/UDP 连接及在线设备。通过内置 MCP 只读获取数据，无需填写端口或密钥。
 #!author=许舟
-#!version=v2.0.0
+#!version=v2.1.0
 #!category=工具
 
 # 功能参考：mickeu 的 Memory Traffic 面板。
 # 需启用 Surge > 设置 > HTTP API > MCP（http-api-mcp = true）。
 # 面板显示时每 10 秒刷新；无 Tailscale 策略时仍显示内存、运行时长及流量。
+# 速率与累计流量为非回环接口计数合计；内存条以 50 MiB 为参考，不代表设备上限。
 
 [Panel]
 MemoryTraffic = title="内存流量Tailscale实时监控",content="正在读取 Surge 状态…",style=info,script-name=memory-traffic,update-interval=10
 
 [Script]
 memory-traffic = type=generic,timeout=30,script-path=https://raw.githubusercontent.com/zhiaon/Modules/main/surge_scripts/memory-traffic.js,script-update-interval=86400
+# 缓存仅保存策略名或确认未配置的结果，最长 5 分钟；配置重载或引擎启动时失效。
+memory-traffic-profile-reloaded = type=event,event-name=profile-reloaded,timeout=10,script-path=https://raw.githubusercontent.com/zhiaon/Modules/main/surge_scripts/memory-traffic.js,script-update-interval=86400,argument=invalidate-policy-cache
+memory-traffic-engine-started = type=event,event-name=engine-started,timeout=10,script-path=https://raw.githubusercontent.com/zhiaon/Modules/main/surge_scripts/memory-traffic.js,script-update-interval=86400,argument=invalidate-policy-cache
