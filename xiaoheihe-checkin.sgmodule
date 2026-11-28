@@ -1,0 +1,18 @@
+#!name=小黑盒签到
+#!desc=打开小黑盒App自动获取Cookie与签名参数，按设定时间每日定时发起签到；凭据仅保存在本机，通知内容脱敏。
+#!version=v1.0.0
+#!category=签到
+#!author=6otho (Minis 转换)
+#!homepage=https://raw.githubusercontent.com/6otho/Loon_tool/refs/heads/main/Js/heybox.js
+#!arguments=cron_time:30 8 * * *,policy:Proxy
+#!arguments-desc=【cron_time】\n功能说明：每日定时签到任务的执行时间。\n配置方法：填写五段 cron（分 时 日 月 周），用空格分隔，写入时保留外层英文引号。\n取值示例：\n· 30 8 * * *：每天 08:30（默认）\n· 0 8 * * *：每天 08:00\n· 30 12 * * *：每天 12:30\n注意事项：只负责触发签到；抓包由 http-request 脚本按需触发，与 cron 无关。\n\n【policy】\n功能说明：api.xiaoheihe.cn 的流量策略组，决定抓取与签到请求走哪条线路。\n配置方法：填写本机已存在且完全同名的策略组或策略名，默认 Proxy。\n取值示例：\n· Proxy：走 Proxy 策略组（默认）\n· DIRECT：直连\n· 自建组名：填写本机实际的组名\n注意事项：名称写错会导致该域名无匹配策略；只影响 api.xiaoheihe.cn，不改组内当前节点。\n\n————\n\n整体备注：\n· 数据来源：api.xiaoheihe.cn 的 account/home_v2 与 task/sign 接口\n· 刷新机制：打开小黑盒 App 触发抓包；签到按 cron_time 定时触发\n· 执行方式：单脚本双模式，靠 $request 是否存在区分抓包与签到\n· 异常处理：存储读写与网络请求均做了容错；通知内容脱敏，不泄露完整 Cookie\n· 隐私安全：凭据仅存本机 Surge 存储，通知只显示状态，不含认证参数\n· 兼容性：由 Loon 插件转换，需开启 MITM 并信任证书，仅适用于 iOS Surge
+
+[Rule]
+DOMAIN-SUFFIX,api.xiaoheihe.cn,{{{policy}}}
+
+[Script]
+小黑盒获取Cookie = type=http-request,pattern=^https:\/\/api\.xiaoheihe\.cn\/(account\/home_v2|task\/sign),requires-body=false,timeout=10,script-update-interval=86400,script-path=https://raw.githubusercontent.com/zhiaon/Modules/main/surge_scripts/heybox.js
+小黑盒每日签到 = type=cron,cronexp="{{{cron_time}}}",timeout=120,script-update-interval=86400,script-path=https://raw.githubusercontent.com/zhiaon/Modules/main/surge_scripts/heybox.js,wake-system=1
+
+[MITM]
+hostname = %APPEND% api.xiaoheihe.cn

@@ -1,0 +1,12 @@
+#!name=Trakt 中文与播放器跳转
+#!desc=为 Trakt 电影、剧集与单集详情补全简体中文标题和简介，并在简介中添加 Infuse、Forward 与 Rex 搜索跳转链接。
+#!version=v1.0.0
+#!category=影视
+#!author=6otho (Minis 转换)
+#!homepage=
+
+[Script]
+Trakt 中文与播放器跳转 = type=http-response,pattern=^https?:\/\/api\.trakt\.tv\/(movies|shows)\/.+,requires-body=1,max-size=0,script-update-interval=86400,script-path=https://raw.githubusercontent.com/zhiaon/Modules/main/surge_scripts/trakt.js
+
+[MITM]
+hostname = %APPEND% api.trakt.tv

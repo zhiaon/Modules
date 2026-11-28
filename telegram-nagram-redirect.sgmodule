@@ -1,0 +1,12 @@
+#!name=Telegram 跳转 Nagram
+#!desc=将 t.me 链接通过 307 重定向至 Telegram 的 Nagram 解析链接。
+#!version=v1.0.0
+#!category=工具
+#!author=未提供（Minis 转换）
+#!homepage=未提供（本地原件）
+
+[MITM]
+hostname = %APPEND% t.me
+
+[URL Rewrite]
+^https?://t.me/(.+) tg://resolve?domain=$1 307

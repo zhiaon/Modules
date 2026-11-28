@@ -1,0 +1,14 @@
+#!name=Telegram 外链跳转
+#!category=工具
+#!version=v1.0.0
+#!desc=将 t.me 外链按所选第三方 Telegram 客户端跳转打开；sg = Swiftgram，turrit = Turrit。未命中或参数非法时原样放行。
+#!author=秦城二院彭医生 (Minis 转换)
+#!homepage=https://github.com/dcpengx/Loon
+#!arguments=jump:sg
+#!arguments-desc=【jump】\n功能说明：选择 t.me 外链跳转时要打开的目标第三方 Telegram 客户端。\n配置方法：填写客户端关键字，只接受 sg 或 turrit，默认 sg。\n取值示例：\n· sg：Swiftgram（默认）\n· turrit：Turrit\n注意事项：Surge 的脚本参数按字符串传递，脚本内部已按 key=value 解析；填写其他值时不跳转，原链接照常打开。\n\n————\n\n整体备注：\n· 数据来源：t.me 外链请求\n· 刷新机制：命中即处理，无缓存\n· 执行方式：http-request 脚本改写为 302 跳转\n· 异常处理：参数非法或链接不匹配时原样放行\n· 隐私安全：不读取、不存储任何账号信息\n· 兼容性：需开启 MITM 并信任证书；仅处理 t.me，不影响 Telegram 本体流量
+
+[Script]
+telegram-redirect = type=http-request,pattern=^https?:\/\/t\.me\/,script-update-interval=86400,script-path=https://raw.githubusercontent.com/zhiaon/Modules/main/surge_scripts/tg-redirect-surge.js,argument="jump={{{jump}}}",timeout=10
+
+[MITM]
+hostname = %APPEND% t.me

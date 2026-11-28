@@ -1,0 +1,22 @@
+#!name=Apple 推送代理
+#!desc=将 Apple Push 与相关 CDN 域名及 IP 网段流量分流至 Proxy 策略组。
+#!version=v1.0.0
+#!category=工具
+#!author=未提供（Minis 转换）
+#!homepage=未提供（本地原件）
+
+[Rule]
+DOMAIN-SUFFIX,push.apple.com,Proxy
+DOMAIN-SUFFIX,akadns.net,Proxy
+DOMAIN-KEYWORD,apple.com.edgekey.net,Proxy
+
+IP-CIDR,17.249.0.0/16,Proxy,no-resolve
+IP-CIDR,17.252.0.0/16,Proxy,no-resolve
+IP-CIDR,17.57.144.0/22,Proxy,no-resolve
+IP-CIDR,17.188.128.0/18,Proxy,no-resolve
+IP-CIDR,17.188.20.0/23,Proxy,no-resolve
+
+IP-CIDR6,2620:149:a44::/48,Proxy,no-resolve
+IP-CIDR6,2403:300:a42::/48,Proxy,no-resolve
+IP-CIDR6,2403:300:a51::/48,Proxy,no-resolve
+IP-CIDR6,2a01:b740:a42::/48,Proxy,no-resolve

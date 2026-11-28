@@ -1,0 +1,32 @@
+#!name=PAKO 自用去广告
+#!desc=拦截插件中列出的开屏广告、广告接口及相关广告资源请求。
+#!version=v1.0.0
+#!category=去广告
+#!author=未提供（Minis 转换）
+#!homepage=未提供（本地原件）
+
+[MITM]
+hostname = %APPEND% pgdt.gtimg.cn, m1.ad.10010.com, ytx-file.110route.cn, open.e.kuaishou.cn, cn.pornhub.com, www.pornhub.com, p0.pipi.cn, wx.maoyan.com
+
+[URL Rewrite]
+# QQ空间去开屏
+^https:\/\/pgdt\.gtimg\.cn - reject
+
+# 联通去开屏
+^https:\/\/m1\.ad\.10010\.com - reject
+
+# 悦通行去开屏
+^https:\/\/ytx-file\.110route\.cn - reject
+
+# 快手去开屏
+^https:\/\/open\.e\.kuaishou\.cn\/rest\/e\/v3\/open - reject
+
+# 去除开屏广告（Pornhub）
+^https:\/\/(cn|www)\.pornhub\.com\/_xa\/ads.* - reject
+
+# 猫眼电影小程序 - 演出页面拦截
+^https:\/\/p0\.pipi\.cn - reject
+^https:\/\/wx\.maoyan\.com\/maoyansh\/myshow\/ajax\/ad\/.* - reject
+
+# 猫眼 - 移除开屏广告、红包悬浮
+^https:\/\/p0\.pipi\.cn\/adAdmin\/[\w]+\.(jpg|png)\?.*$ - reject

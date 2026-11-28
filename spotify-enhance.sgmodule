@@ -1,0 +1,27 @@
+#!name=Spotify 增强
+#!desc=移除音频广告并恢复歌手列表正常展示，可选移除底栏创建按钮、关闭 Apple 设备接力；通过百度翻译 API 将非中文歌词汉化。
+#!category=去广告
+#!version=v1.0.0
+#!author=6otho, app2smile, 001ProMax (Minis 转换)
+#!homepage=https://github.com/6otho/Loon_tool
+#!icon=https://raw.githubusercontent.com/luestr/IconResource/main/App_icon/120px/Spotify.png
+#!arguments=tab:true,useractivity:true,appid:"",securityKey:""
+#!arguments-desc=【tab】\n功能说明：控制是否移除底栏“创建”按钮（tab 相关 UI 配置）。\n配置方法：填 true 或 false。\n取值示例：\n· true：移除底栏创建按钮（默认）\n· false：保留底栏创建按钮\n注意事项：首次使用或修改参数后需重新登录 Spotify 才会完全生效。\n\n【useractivity】\n功能说明：控制是否启用 Apple 设备接力（UserActivity 分享开关）。\n配置方法：填 true 或 false。\n取值示例：\n· true：启用设备接力（默认）\n· false：关闭设备接力\n注意事项：首次使用或修改参数后需重新登录 Spotify 才会完全生效。\n\n【appid】\n功能说明：百度翻译开放平台通用翻译 API 的 APP ID，用于把 Spotify 非中文歌词翻译为中文。\n配置方法：前往 http://api.fanyi.baidu.com/register 注册，开通“通用翻译”后到 http://api.fanyi.baidu.com/manage/developer 复制 appid 填入。\n取值示例：\n· 20250101000000000（形如年份开头的数字串，仅为示例，请填自己的真实值）\n注意事项：此密钥为用户自行申请，本模块默认留空，未配置时不翻译歌词；密钥不要泄露给他人。\n\n【securityKey】\n功能说明：百度翻译开放平台通用翻译 API 的密钥，与 appid 配对使用。\n配置方法：在 http://api.fanyi.baidu.com/manage/developer 页面复制密钥填入。\n取值示例：\n· 32 位十六进制字符串（仅为示例，请填自己的真实值）\n注意事项：此密钥为用户自行申请，本模块默认留空，未配置时不翻译歌词；密钥不要泄露给他人。\n\n————\n\n整体备注：\n· 去广告：pendragon 请求本地返回空 JSON，artistview 重定向到 iPad 平台接口，bootstrap/user-customization-service 响应经脚本改写账号属性实现去广告与界面调整。\n· 歌词翻译：color-lyrics/v2/track 响应经脚本解析 Protobuf 歌词并调用百度翻译后重编码返回。\n· QUIC 拦截：对三个 Spotify 歌词/配置域名屏蔽 QUIC，使其回落到可 MITM 的 HTTPS。\n· 兼容性：由 Loon 插件合并转换，需开启 MITM 并信任证书，仅适用于 iOS Surge；脚本依赖 Surge 的 JavaScript 引擎。
+
+[Rule]
+AND,((DOMAIN,spclient.wg.spotify.com),(PROTOCOL,QUIC)),REJECT
+AND,((DOMAIN,gae2-spclient.spotify.com),(PROTOCOL,QUIC)),REJECT
+AND,((DOMAIN,guc3-spclient.spotify.com),(PROTOCOL,QUIC)),REJECT
+
+[URL Rewrite]
+^https:\/\/(?:\w+-spclient|spclient\.wg)\.spotify\.com(?::443)?\/artistview\/v1\/artist\/(.*)&platform=iphone https://spclient.wg.spotify.com/artistview/v1/artist/$1&platform=ipad header
+
+[Map Local]
+^https:\/\/(?:\w+-spclient|spclient\.wg)\.spotify\.com(?::443)?\/pendragon\/ data-type=base64 data="e30=" status-code=200 header="Content-Type:application/json"
+
+[Script]
+Spotify去广告 = type=http-response,pattern=^https:\/\/(?:\w+-spclient|spclient\.wg)\.spotify\.com(?::443)?\/(?:bootstrap|user-customization-service),requires-body=1,binary-body-mode=1,max-size=1048576,timeout=3,script-update-interval=86400,script-path=https://raw.githubusercontent.com/zhiaon/Modules/main/surge_scripts/spotify-crack.js,argument="tab={{{tab}}}&useractivity={{{useractivity}}}"
+Spotify歌词翻译 = type=http-response,pattern=^https:\/\/(?:spclient\.wg|gae2-spclient|guc3-spclient)\.spotify\.com(?::443)?\/color-lyrics\/v2\/track\/,requires-body=1,binary-body-mode=1,max-size=0,timeout=10,script-update-interval=86400,script-path=https://raw.githubusercontent.com/zhiaon/Modules/main/surge_scripts/spotify-lyrics.js,argument="appid={{{appid}}}&securityKey={{{securityKey}}}"
+
+[MITM]
+hostname = %APPEND% *-spclient.spotify.com, spclient.wg.spotify.com, gae2-spclient.spotify.com, guc3-spclient.spotify.com

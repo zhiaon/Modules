@@ -1,0 +1,12 @@
+#!name=GitHub 429 繁中修复
+#!desc=将 GitHubusercontent 请求的 Accept-Language 覆盖为 zh-Hant。
+#!version=v1.0.0
+#!category=工具
+#!author=6otho（Minis 转换）
+#!homepage=https://github.com/6otho
+
+[MITM]
+hostname = %APPEND% *.githubusercontent.com
+
+[Header Rewrite]
+^https://.*\.githubusercontent\.com/ header-replace Accept-Language zh-Hant

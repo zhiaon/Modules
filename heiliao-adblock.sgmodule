@@ -1,0 +1,19 @@
+#!name=黑料不打烊净化
+#!desc=拦截黑料网各线路的统计与广告域名请求，并覆盖网页请求的 Accept-Encoding 头，避免响应被压缩后无法处理。
+#!version=v1.0.0
+#!category=去广告
+#!author=怎么肥事 (Minis 转换)
+#!homepage=
+
+[URL Rewrite]
+# 广告与统计独立域名
+^https?:\/\/stats\.kwvprfcr\.xyz - reject
+^https?:\/\/mc\.yandex\.ru - reject
+^https?:\/\/www\.googletagmanager\.com - reject
+
+[Header Rewrite]
+# 关闭压缩，便于后续处理响应正文
+^https?:\/\/(?:www\.)?(?:35kih\.rawwbrr\.cc|qu4j3\.rbenxbb\.cc|d2pm67mge2h119\.cloudfront\.net|heiliao\.com|519c\.jzrihhq\.cc|a9b\.kareckqx\.com)\/.* header-replace Accept-Encoding identity
+
+[MITM]
+hostname = %APPEND% 35kih.rawwbrr.cc, qu4j3.rbenxbb.cc, d2pm67mge2h119.cloudfront.net, *.heiliao.com, heiliao.com, 519c.jzrihhq.cc, a9b.kareckqx.com, stats.kwvprfcr.xyz, mc.yandex.ru, www.googletagmanager.com

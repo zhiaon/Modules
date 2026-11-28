@@ -1,0 +1,19 @@
+#!name=WeTalk 自动助手
+#!category=签到
+#!version=v1.0.0
+#!desc=自动抓取账号凭据并按定时执行签到与刷视频奖励；运行后输出每个账号的余额、签到与视频结果，到结算时间推送当日汇总。
+#!author=6otho (Minis 转换)
+#!homepage=https://github.com/6otho/Loon_tool
+#!icon=https://upicon.iknn.eu.org/admin/wetalk_1779180231812.jpeg
+#!arguments=cron_time:50 */2 * * *,settle_time:50 23 * * *,task_arg:23:50,enable_cookie:true
+#!arguments-desc=【cron_time】\n功能说明：定时签到与刷视频任务的执行时间，默认每两小时第 50 分执行。\n配置方法：填写五段 cron（分 时 日 月 周），用空格分隔，写入时保留外层英文引号。\n取值示例：\n· 50 */2 * * *：每两小时 50 分（默认）\n· 0 8 * * *：每天 08:00\n· 50 * * * *：每小时 50 分\n注意事项：只负责签到与刷视频；结算时间由 task_arg 决定。Surge 模块参数不支持逗号，原插件默认值 50 */2,23 * * * 中的 23 点触发无法直接写入；如需每天 23:50 也触发，可改填 50 * * * *，夜间汇总由 task_arg 的补发逻辑在过点后首次运行时推送。\n\n【settle_time】\n功能说明：夜间兜底定时，默认每天 23:50 触发一次，用来补发当日汇总。\n配置方法：填写五段 cron，例如 50 23 * * *；不要写逗号。\n取值示例：\n· 50 23 * * *：每天 23:50（默认）\n· 0 0 * * *：每天 00:00\n注意事项：签到仍按 cron_time 执行，本项只影响汇总补发时机；与 task_arg 的时间需大致对齐。\n\n【task_arg】\n功能说明：任务参数，可写结算时间、指定邮箱、删除指令或结算关键词。\n配置方法：多项用逗号分隔；时间写 时:分 或 时；指定账号写完整邮箱；删除写“删除:邮箱”；结算写“结算”。\n取值示例：\n· "23:50"：当日 23:50 之后首次运行推送汇总（默认）\n· "23:50,结算"：强制汇总\n· "23:50,name@example.com"：只跑指定账号\n· "删除:name@example.com"：从本地库删除该账号\n注意事项：留空则默认 23:50；时间只决定汇总时机，不影响实际签到发生的时间。\n\n【enable_cookie】\n功能说明：是否抓取并保存账号凭据的开关。\n配置方法：只填 true 或 false，默认 true。\n取值示例：\n· true：打开 App 触发余额或签到请求即保存账号（默认）\n· false：不抓取、不写入，已存账号仍可定时签到\n注意事项：写入的是原始请求 URL 与请求头，仅保存在本机；抓取成功后会推送通知，同一账号 5 秒内只提示一次。\n\n————\n\n整体备注：\n· 数据来源：api.wetalkapp.com 的余额、签到、视频奖励与登录相关接口\n· 刷新机制：签到与刷视频按 cron_time 触发；汇总在 task_arg 指定时间之后首次运行时推送\n· 执行方式：请求脚本抓取与登录解锁，定时脚本执行签到与刷视频，另有一键清空账号入口\n· 异常处理：单次请求超时会先重试并改走直连，仍失败则只记录，不猜测结果\n· 隐私安全：凭据仅存本机 Surge 存储；通知显示账号邮箱前缀，不含完整认证参数\n· 兼容性：由 Loon 插件转换，需开启 MITM 并信任证书，仅适用于 iOS Surge\n
+
+[Script]
+WeTalk获取Cookie = type=http-request,pattern=^https:\/\/api\.wetalkapp\.com\/app\/(?:queryBalanceAndBonus|checkIn),script-update-interval=86400,script-path=https://raw.githubusercontent.com/zhiaon/Modules/main/surge_scripts/wetalk-getcookie.js,argument="enable_cookie={{{enable_cookie}}}",requires-body=true,max-size=1048576,timeout=15
+WeTalk解锁登录 = type=http-request,pattern=^https:\/\/api\.wetalkapp\.com\/app\/(?:log(?:in)?Out|sign[oO]ut|disconnect|exit|log?in|sign[iI]n|send(?:Code|_code|Sms)|register|signUp),script-update-interval=86400,script-path=https://raw.githubusercontent.com/zhiaon/Modules/main/surge_scripts/wetalk-unlocklogin.js,requires-body=true,max-size=1048576,timeout=20
+WeTalk签到 = type=cron,cronexp="{{{cron_time}}}",script-update-interval=86400,script-path=https://raw.githubusercontent.com/zhiaon/Modules/main/surge_scripts/wetalk-task.js,argument="{{{task_arg}}}",timeout=1000,wake-system=1
+WeTalk夜间汇总 = type=cron,cronexp="{{{settle_time}}}",script-update-interval=86400,script-path=https://raw.githubusercontent.com/zhiaon/Modules/main/surge_scripts/wetalk-task.js,argument="{{{task_arg}}}",timeout=1000,wake-system=1
+WeTalk清空账号 = type=generic,script-update-interval=86400,script-path=https://raw.githubusercontent.com/zhiaon/Modules/main/surge_scripts/wetalk-clean.js,timeout=10
+
+[MITM]
+hostname = %APPEND% api.wetalkapp.com
