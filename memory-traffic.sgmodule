@@ -1,0 +1,15 @@
+#!name=内存流量Tailscale实时监控
+#!desc=显示 Surge 内存、运行时长、接口累计上传与下载，并自动识别 Tailscale 策略，展示出口、DERP、TCP/UDP 连接及在线设备。数据由 Surge 内置 MCP 只读取得，无需填写端口或密钥。
+#!author=许舟
+#!version=v2.0.0
+#!category=工具
+
+# 功能参考：mickeu 的 Memory Traffic 面板。
+# 需启用 Surge > 设置 > HTTP API > MCP（http-api-mcp = true）。
+# 面板显示时每 10 秒刷新；无 Tailscale 策略时仍显示内存、运行时长及流量。
+
+[Panel]
+MemoryTraffic = title="内存流量Tailscale实时监控",content="正在读取 Surge 状态…",style=info,script-name=memory-traffic,update-interval=10
+
+[Script]
+memory-traffic = type=generic,timeout=30,script-path=https://raw.githubusercontent.com/zhiaon/Modules/main/surge_scripts/memory-traffic.js,script-update-interval=86400
